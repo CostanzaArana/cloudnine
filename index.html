@@ -6,16 +6,16 @@
 
   <!-- Open Graph / Facebook / WhatsApp -->
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://tu-dominio.com/" />
-  <meta property="og:title" content="Cloud Nine Vape Store | Catálogo Online" />
-  <meta property="og:description" content="E-liquids, pod systems y descartables con envío directo. Revisa nuestro catálogo actualizado." />
-  <meta property="og:image" content="https://tu-dominio.com/assets/og-image.jpg" />
+  <meta property="og:url" content="https://cloudninestore.pages.dev/" />
+  <meta property="og:title" content="Cloud Nine | Vape Store" />
+  <meta property="og:description" content="E-liquids, pods y descartables con envío en Alta Gracia y alrededores. Catálogo actualizado." />
+  <meta property="og:image" content="https://cloudninestore.pages.dev/assets/banner.png" />
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Cloud Nine Vape Store | Catálogo Online" />
-  <meta name="twitter:description" content="E-liquids, pod systems y descartables con envío directo. Revisa nuestro catálogo actualizado." />
-  <meta name="twitter:image" content="https://tu-dominio.com/assets/og-image.jpg" />
+  <meta name="twitter:title" content="Cloud Nine | Vape Store" />
+  <meta name="twitter:description" content="E-liquids, pods y descartables con envío en Alta Gracia y alrededores. Catálogo actualizado." />
+  <meta name="twitter:image" content="https://cloudninestore.pages.dev/assets/banner.png" />
 
   <title>Cloud Nine | Vape Store</title>
   
@@ -141,57 +141,87 @@
 
   <!-- HEADER / HERO -->
   <header class="main-header">
-    <h1>Cloud Nine</h1>
-    <p>Catálogo Online</p>
+    <div class="hero-content">
+      <h1>Cloud Nine</h1>
+      <p class="hero-subtitle">Vapes, pods y líquidos con envío en Alta Gracia y alrededores</p>
+      
+      <div class="hero-badges">
+        <span>🛵 Envíos en Alta Gracia y alrededores</span>
+        <span>⚡ Stock actualizado</span>
+        <span>💸 Recibimos todos los medios de pago</span>
+      </div>
+
+      <div class="hero-actions">
+        <a href="#como-comprar" class="btn btn-secondary">❓ ¿Cómo comprar?</a>
+      </div>
+    </div>
   </header>
 
-  <main>
+<main id="catalogo">
 
-    <section class="catalog">
+    <!-- SECCIÓN DE CATEGORÍAS VISUALES -->
+    <section id="categorias" class="category-grid-section">
+      <div class="category-grid">
 
-      <a href="descartables.html" class="section-head-link">
-        <div class="section-head">
-          <h2>Descartables ➔</h2>
-        </div>
-      </a>
+        <a href="descartables.html" class="category-card" style="--bg-img: url('assets/descartables.jpg');">
+          <div class="category-card-overlay"></div>
+          <div class="category-card-content">
+            <h3>Descartables</h3>
+            <span>Ver catálogo ➔</span>
+          </div>
+        </a>
 
-      <div class="grid" id="grid-descartables"></div>
+        <a href="recargables.html" class="category-card" style="--bg-img: url('assets/recargables.jpg');">
+          <div class="category-card-overlay"></div>
+          <div class="category-card-content">
+            <h3>Recargables</h3>
+            <span>Ver catálogo ➔</span>
+          </div>
+        </a>
 
-      <a class="ver-mas" href="descartables.html">
-        Ver más →
-      </a>
+        <a href="liquidos.html" class="category-card" style="--bg-img: url('assets/liquidos.jpg');">
+          <div class="category-card-overlay"></div>
+          <div class="category-card-content">
+            <h3>Líquidos</h3>
+            <span>Ver catálogo ➔</span>
+          </div>
+        </a>
+
+      </div>
     </section>
 
+    <!-- PRODUCTOS DESTACADOS -->
     <section class="catalog">
-      <a href="recargables.html" class="section-head-link">
-        <div class="section-head">
-          <h2>Recargables ➔</h2>
-        </div>
-      </a>
-
-      <div class="grid" id="grid-recargables"></div>
-
-      <a class="ver-mas" href="recargables.html">
-        Ver más →
-      </a>
+      <div class="section-head">
+        <h2>🔥 Productos Destacados</h2>
+      </div>
+      <div class="grid" id="grid-destacados">
+        <div class="loading-state">Cargando productos...</div>
+      </div>
     </section>
 
-    <section class="catalog">
-      <a href="liquidos.html" class="section-head-link">
-        <div class="section-head">
-          <h2>Líquidos ➔</h2>
-        </div>
-      </a>
-
-      <div class="grid" id="grid-liquidos"></div>
-
-      <a class="ver-mas" href="liquidos.html">
-        Ver más →
-      </a>
-    </section>
   </main>
 
   <div id="toast" class="toast"></div>
+
+  <!-- SECCIÓN CÓMO COMPRAR / FAQ -->
+  <section id="como-comprar" class="faq-section">
+    <h2>¿Cómo comprar en Cloud Nine?</h2>
+    <div class="faq-grid">
+      <div class="faq-item">
+        <h3>1. Elegí tus productos</h3>
+        <p>Navegá por el catálogo, seleccioná tus sabores o modelos favoritos y agregalos al carrito.</p>
+      </div>
+      <div class="faq-item">
+        <h3>2. Elegí envío o retiro</h3>
+        <p>Ingresá tu <strong>nombre y dirección exacta</strong> para asegurar una entrega rápida. Hacemos envíos sin cargo en Alta Gracia y a alrededores con cadetería, o podés retirar en persona.</p>
+      </div>
+      <div class="faq-item">
+        <h3>3. Pagá y enviá el comprobante</h3>
+        <p>Pagá con Mercado Pago, transferencia o efectivo al momento de la entrega. Recordá <strong>enviar el comprobante por WhatsApp</strong> para preparar tu pedido inmediatamente.</p>
+      </div>
+    </div>
+  </section>
 
   <footer>
     <p>¿Dudas o pedidos?</p>
@@ -216,6 +246,16 @@
     </div>
   </div>
 
+  <!-- Botón flotante de WhatsApp -->
+  <a href="https://wa.me/5493547322726" 
+    class="whatsapp-float" 
+    target="_blank" 
+    rel="noopener noreferrer"
+    aria-label="Contactar por WhatsApp">
+    <svg viewBox="0 0 32 32" width="28" height="28" fill="currentColor">
+      <path d="M16.004 0C7.19 0 .01 7.176.01 16.004c0 2.82.74 5.57 2.14 8.01L.01 32l8.2-2.15a15.9 15.9 0 0 0 7.79 2.02c8.82 0 15.99-7.17 15.99-15.99S24.82 0 16.004 0zm0 29.2a13.2 13.2 0 0 1-6.73-1.84l-.48-.28-4.86 1.27 1.3-4.74-.31-.49a13.15 13.15 0 0 1-2.02-7.01c0-7.28 5.92-13.2 13.2-13.2s13.2 5.92 13.2 13.2-5.92 13.2-13.2 13.2zm7.24-9.88c-.4-.2-2.35-1.16-2.72-1.29-.36-.13-.63-.2-.89.2-.26.4-1.02 1.29-1.25 1.55-.23.26-.46.29-.86.1-.4-.2-1.68-.62-3.2-1.97-1.18-1.05-1.98-2.35-2.21-2.75-.23-.4-.02-.62.17-.82.18-.18.4-.46.6-.69.2-.23.26-.4.4-.66.13-.26.07-.49-.03-.69-.1-.2-.89-2.14-1.22-2.93-.32-.77-.65-.66-.89-.67h-.76c-.26 0-.69.1-1.05.49-.36.4-1.38 1.35-1.38 3.29s1.41 3.81 1.61 4.07c.2.26 2.78 4.24 6.74 5.95 4.72 2.03 4.72 1.35 5.57 1.27.85-.08 2.75-1.12 3.14-2.21.39-1.08.39-2.01.27-2.21-.12-.2-.4-.32-.8-.52z"/>
+    </svg>
+  </a>
 
 </body>
 </html>

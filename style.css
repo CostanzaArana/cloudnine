@@ -30,8 +30,8 @@ html {
 }
 
 /* ==========================
-   TOPBAR & NAVEGACIÓN SUPERIOR
-   ========================== */
+TOPBAR & NAVEGACIÓN SUPERIOR
+========================== */
 
 .topbar,
 nav {
@@ -214,8 +214,8 @@ nav {
 }
 
 /* ==========================
-   HEADER / HERO PRINCIPAL
-   ========================== */
+HEADER / HERO PRINCIPAL
+========================== */
 
 .main-header {
   padding: 3.5rem 1.4rem 2rem;
@@ -230,16 +230,9 @@ nav {
   letter-spacing: 1px;
 }
 
-.main-header p {
-  font-size: 0.95rem;
-  opacity: 0.7;
-  margin: 0;
-  font-family: var(--font-body);
-}
-
 /* ==========================
-   MENÚ LATERAL OVERLAY
-   ========================== */
+MENÚ LATERAL OVERLAY
+========================== */
 
 .menu-overlay {
   position: fixed;
@@ -338,8 +331,8 @@ nav {
 }
 
 /* ==========================
-   PANEL DE CARRITO
-   ========================== */
+PANEL DE CARRITO
+========================== */
 
 .cart-panel {
   position: fixed;
@@ -468,8 +461,8 @@ nav {
 }
 
 /* ==========================
-   CATÁLOGO Y PRODUCTOS
-   ========================== */
+CATÁLOGO Y PRODUCTOS
+========================== */
 
 .catalog {
   max-width: 1080px;
@@ -682,8 +675,8 @@ nav {
 }
 
 /* ==========================
-   ESTADOS DE STOCK
-   ========================== */
+ESTADOS DE STOCK
+========================== */
 
 .card-cta:disabled,
 .card-cta.disabled {
@@ -703,40 +696,54 @@ nav {
 }
 
 /* ==========================
-   FILTROS Y NAVEGACIÓN DE PUFFS
-   ========================== */
+FILTROS Y CONTENEDOR MEJORADO
+========================== */
 
-.filters-container {
+/* Contenedor principal con efecto cristal */
+.filters-container,
+.filter-toolbar {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  padding: 1.2rem;
+  margin: 1.5rem auto 2rem;
+  max-width: 1080px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin: 15px 0 25px 0;
+  gap: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
 }
 
 .filter-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
 }
 
 .filter-label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-family: var(--font-titles);
-  color: var(--ink);
-  opacity: 0.8;
-  min-width: 60px;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.6);
+  min-width: 70px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   flex-shrink: 0;
 }
 
-.puff-filters {
+/* Tira deslizable de filtros */
+.puff-filters,
+.filter-options {
   display: flex;
   flex-wrap: nowrap;
   overflow-x: auto;
   gap: 8px;
   margin: 0;
-  padding: 4px 4px 8px 4px;
+  padding: 4px;
   flex: 1;
   width: 100%;
   -webkit-overflow-scrolling: touch;
@@ -744,42 +751,71 @@ nav {
   scrollbar-width: none;
 }
 
-.puff-filters::-webkit-scrollbar {
+.puff-filters::-webkit-scrollbar,
+.filter-options::-webkit-scrollbar {
   display: none;
 }
 
+/* Botones de filtro base */
 .filter-btn {
-  background: #18181c;
-  color: #a0a0ab;
-  border: 1px solid #2e2e38;
-  padding: 8px 18px;
-  border-radius: 25px;
-  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.82rem;
   font-weight: 500;
   cursor: pointer;
   white-space: nowrap;
-  transition: all 0.25s ease;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   font-family: var(--font-body);
   flex-shrink: 0;
 }
 
-.filter-btn.active, 
+/* Hover */
 .filter-btn:hover {
-  background: #00d2ff;
-  color: #0d0d11;
-  border-color: #00d2ff;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Estado activo con Neón Cyan */
+.filter-btn.active {
+  background: linear-gradient(135deg, #00d2ff 0%, #0080ff 100%);
+  color: #000000;
+  border-color: transparent;
   font-weight: 700;
-  box-shadow: 0 0 12px rgba(0, 210, 255, 0.4);
+  box-shadow: 0 0 14px rgba(0, 210, 255, 0.45);
 }
 
 .filter-btn:active {
-  transform: scale(0.95);
+  transform: scale(0.96);
+}
+
+/* Ajustes mobile */
+@media (max-width: 600px) {
+  .filters-container,
+  .filter-toolbar {
+    padding: 1rem;
+    margin: 1rem auto 1.5rem;
+    border-radius: 12px;
+  }
+
+  .filter-group {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .filter-label {
+    min-width: auto;
+  }
 }
 
 /* ==========================
-   BACKDROP (TELÓN OSCURO)
-   ========================== */
+BACKDROP (TELÓN OSCURO)
+========================== */
 
 .backdrop {
   position: fixed;
@@ -802,8 +838,8 @@ nav {
 }
 
 /* ==========================================
-   FORMULARIO Y CHECKOUT
-   ========================================== */
+FORMULARIO Y CHECKOUT
+========================================== */
 
 .cart-checkout-form {
   padding: 15px 0;
@@ -888,8 +924,8 @@ nav {
 }
 
 /* ==========================================
-   BOTONES DE CHECKOUT (MERCADO PAGO Y WHATSAPP)
-   ========================================== */
+BOTONES DE CHECKOUT (MERCADO PAGO Y WHATSAPP)
+========================================== */
 
 .cart-footer .cart-checkout-btn,
 .cart-footer .btn-mp {
@@ -949,8 +985,8 @@ nav {
 }
 
 /* ==========================
-   MODAL DE EDAD (+18)
-   ========================== */
+MODAL DE EDAD (+18)
+========================== */
 
 .age-modal {
   position: fixed;
@@ -1046,8 +1082,8 @@ nav {
 }
 
 /* ==========================
-   FOOTER Y COTIZACIÓN
-   ========================== */
+FOOTER Y COTIZACIÓN
+========================== */
 
 footer {
   border-top: 1px solid var(--line);
@@ -1081,77 +1117,9 @@ footer a {
 }
 
 /* ==========================
-   TOAST NOTIFICATION
-   ========================== */
+TOAST NOTIFICATION
+========================== */
 
-<<<<<<< HEAD
-/* Contenedor de la imagen unificado */
-.card-img {
-  position: relative; /* Para posicionar la etiqueta OFERTA */
-  width: 100%;
-  aspect-ratio: 1 / 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: #000;
-  overflow: hidden; /* Mantiene la etiqueta dentro del borde */
-  padding: 12px;
-  box-sizing: border-box;
-  border-radius: 8px;
-}
-
-.card-img img {
-  max-width: 100%;
-  max-height: 100%;
-  width: auto;
-  height: auto;
-  object-fit: contain;
-  display: block;
-}
-
-/* Precios e integraciones de oferta unificados */
-.card-price {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0.5rem 0;
-  font-family: var(--font-titles);
-  font-weight: 800;
-  font-size: 1.15rem;
-  color: #00d2ff;
-}
-
-/* Precios promocionales */
-.old-price {
-  text-decoration: line-through;
-  color: #8e8e93;
-  font-size: 0.9em;
-  font-weight: 400;
-}
-
-.promo-price {
-  color: #28a745;
-  font-weight: 800;
-  font-size: 1.1em;
-}
-
-/* Etiqueta OFERTA  */
-.badge-promo {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  z-index: 2;
-  background-color: #ff3b30;
-  color: #ffffff;
-  font-weight: bold;
-  font-size: 0.75rem;
-  padding: 4px 8px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
-}
-=======
 .toast {
   position: fixed;
   bottom: 20px;
@@ -1177,8 +1145,8 @@ footer a {
 }
 
 /* ==========================================
-   RESPONSIVE DESIGN / MEDIA QUERIES
-   ========================================== */
+RESPONSIVE DESIGN / MEDIA QUERIES
+========================================== */
 
 @media (max-width: 900px) {
   .grid {
@@ -1229,4 +1197,458 @@ footer a {
     min-width: auto;
   }
 }
->>>>>>> 9240783 (Agregar MP)
+
+/* ==========================
+BOTÓN FLOTANTE DE WHATSAPP
+========================== */
+
+.whatsapp-float {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 56px;
+  height: 56px;
+  background-color: #25d366;
+  color: #ffffff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  text-decoration: none;
+  box-shadow: 0 4px 14px rgba(37, 211, 102, 0.45);
+  z-index: 999;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.whatsapp-float:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 18px rgba(37, 211, 102, 0.55);
+}
+
+/* En mobile un poco más chico */
+@media (max-width: 600px) {
+  .whatsapp-float {
+    width: 52px;
+    height: 52px;
+    bottom: 18px;
+    right: 18px;
+    font-size: 1.55rem;
+  }
+}
+
+/* ==========================
+LOADING STATE
+========================== */
+
+.loading-state {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 3.5rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: rgba(242, 241, 236, 0.55);
+  letter-spacing: 0.3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.loading-state::before {
+  content: "";
+  width: 28px;
+  height: 28px;
+  border: 2.5px solid rgba(242, 241, 236, 0.15);
+  border-top-color: #00d2ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ==========================
+HERO MEJORADO
+========================== */
+
+.main-header {
+  padding: 4rem 1.4rem 3.5rem;
+  text-align: center;
+  border-bottom: 1px solid var(--line);
+  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
+}
+
+.hero-content {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.main-header h1 {
+  font-size: 2.6rem;
+  margin: 0 0 0.7rem 0;
+  letter-spacing: 1.5px;
+}
+
+.hero-subtitle {
+  font-size: 1.05rem;
+  opacity: 0.75;
+  margin: 0 0 2.8rem 0;
+  line-height: 1.5;
+  font-family: var(--font-body);
+}
+
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.7rem;
+  margin-bottom: 2rem;
+}
+
+.hero-badges span {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  font-family: var(--font-body);
+  color: rgba(242, 241, 236, 0.85);
+  display: inline-block;
+  line-height: 1.4;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.85rem;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.9rem;
+}
+
+.btn-primary,
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.85rem 1.6rem;
+  border-radius: 8px;
+  font-family: var(--font-titles);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  transition: all 0.2s ease;
+}
+
+.btn-primary {
+  background: #00d2ff;
+  color: #000;
+}
+
+.btn-primary:hover {
+  background: #00b8e6;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid rgba(242, 241, 236, 0.3);
+}
+
+.btn-secondary:hover {
+  border-color: var(--ink);
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-2px);
+}
+
+/* Mobile */
+@media (max-width: 600px) {
+  .main-header {
+    padding: 3rem 1.2rem 2.8rem;
+  }
+
+  .main-header h1 {
+    font-size: 2.1rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    max-width: 280px;
+  }
+}
+
+/* ==========================
+SECCIÓN DE CATEGORÍAS VISUALES
+========================== */
+
+.category-grid-section {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 2.5rem 1.4rem 1rem;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.2rem;
+}
+
+.category-card {
+  position: relative;
+  height: 180px;
+  border-radius: 12px;
+  overflow: hidden;
+  text-decoration: none;
+  border: 1px solid var(--line);
+  background-color: #121212;
+  background-image: var(--bg-img);
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+  padding: 1.2rem;
+  box-sizing: border-box;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+
+.category-card-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.85) 100%);
+  transition: opacity 0.3s ease;
+}
+
+.category-card-content {
+  position: relative;
+  z-index: 2;
+  color: var(--ink);
+}
+
+.category-card-content h3 {
+  font-family: var(--font-titles);
+  font-size: 1.2rem;
+  margin: 0 0 0.3rem 0;
+  letter-spacing: 0.5px;
+  color: #ffffff;
+}
+
+.category-card-content span {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: #00d2ff;
+  font-weight: 600;
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+}
+
+.category-card:hover {
+  transform: translateY(-4px);
+  border-color: #00d2ff;
+  box-shadow: 0 8px 24px rgba(0, 210, 255, 0.15);
+}
+
+.category-card:hover .category-card-overlay {
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.75) 100%);
+}
+
+/* Responsive para celulares */
+@media (max-width: 768px) {
+  .category-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .category-card {
+    height: 130px;
+  }
+}
+
+/* ==========================
+SECCIÓN FAQ / CÓMO COMPRAR
+========================== */
+
+.faq-section {
+  max-width: 1080px;
+  margin: 3rem auto;
+  padding: 0 1.4rem;
+  text-align: center;
+}
+
+.faq-section h2 {
+  font-family: var(--font-titles);
+  font-size: 1.5rem;
+  margin-bottom: 2rem;
+  color: #ffffff;
+}
+
+.faq-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  text-align: left;
+}
+
+.faq-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--line);
+  padding: 1.5rem;
+  border-radius: 12px;
+}
+
+.faq-item h3 {
+  font-size: 1.1rem;
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  color: #00d2ff;
+}
+
+.faq-item p {
+  font-size: 0.9rem;
+  color: var(--ink-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.faq-item p strong {
+  color: #ffffff;
+}
+
+@media (max-width: 768px) {
+  .faq-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* ==========================================
+HERO & COMPONENTES DE SUBPÁGINAS (CATÁLOGOS)
+========================================== */
+
+.category-hero {
+  position: relative;
+  padding: 3.5rem 1.4rem 2.5rem;
+  background-color: #121212;
+  background-size: cover;
+  background-position: center;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* Overlay oscuro para garantizar contraste y legibilidad */
+.category-hero::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(180deg, rgba(12,12,12,0.65) 0%, rgba(12,12,12,0.95) 100%);
+  z-index: 1;
+}
+
+.category-hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.category-tag {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  font-family: var(--font-titles);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: #00d2ff; /* Mismo cyan de acento de tu tienda */
+  margin-bottom: 0.5rem;
+}
+
+.category-hero h1 {
+  font-size: 2.2rem;
+  margin: 0.3rem 0;
+  letter-spacing: 1px;
+}
+
+.category-hero p {
+  font-size: 1rem;
+  opacity: 0.85;
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+/* Fondos específicos por subpágina */
+.descartables-bg { background-image: url('assets/descartables.jpg'); }
+.recargables-bg { background-image: url('assets/recargables.jpg'); }
+.liquidos-bg { background-image: url('assets/liquidos.jpg'); }
+
+/* TOOLBAR / CONTENEDOR DE FILTROS EN SUBPÁGINAS */
+.filter-toolbar {
+  background: #121212;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1.2rem;
+  margin: 2rem auto 1.5rem;
+  max-width: 1080px;
+}
+
+/* BLOQUE DE BENEFICIOS / VALOR AGREGADO AL PIE DE PÁGINA */
+.subpage-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.2rem;
+  max-width: 1080px;
+  margin: 3.5rem auto 1.5rem;
+  padding: 0 1.4rem;
+  text-align: center;
+}
+
+.feature-item {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 1.4rem 1.2rem;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+}
+
+.feature-icon {
+  font-size: 2rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.feature-item h4 {
+  margin: 0.4rem 0 0.3rem;
+  font-size: 1rem;
+  color: #00d2ff;
+}
+
+.feature-item p {
+  font-size: 0.85rem;
+  opacity: 0.75;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Ajuste responsive para celulares */
+@media (max-width: 600px) {
+  .category-hero {
+    padding: 2.8rem 1.2rem 2rem;
+  }
+  .category-hero h1 {
+    font-size: 1.8rem;
+  }
+}
+

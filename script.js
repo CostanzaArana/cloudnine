@@ -253,24 +253,24 @@ function createProductCard(product) {
   const hasAnyPromo = product.flavors.some(f => f.promoUsd && f.promoUsd < f.usd);
   const badgeHTML = hasAnyPromo ? `<span class="badge-promo">OFERTA</span>` : "";
 
-card.innerHTML = `
-  <div class="card-img">
-    ${badgeHTML}
-    <img src="${imageSrc}" alt="${product.brand} ${product.name}" loading="lazy">
-  </div>
-  <div class="card-body">
-    <h3>${product.name}</h3>
-    <label class="card-label">Sabor</label>
-    <select class="card-select">
-      ${flavorOptions}
-    </select>
-    ${productInfo}
-    <label class="card-label">Cantidad</label>
-    <input class="card-qty" type="number" min="1" value="1">
-    <p class="card-price"></p>
-    <button class="card-cta">Agregar al carrito</button>
-  </div>
-`;
+  card.innerHTML = `
+    <div class="card-img">
+      ${badgeHTML}
+      <img src="${imageSrc}" alt="${product.brand} ${product.name}" loading="lazy">
+    </div>
+    <div class="card-body">
+      <h3>${product.name}</h3>
+      <label class="card-label">Sabor</label>
+      <select class="card-select">
+        ${flavorOptions}
+      </select>
+      ${productInfo}
+      <label class="card-label">Cantidad</label>
+      <input class="card-qty" type="number" min="1" value="1">
+      <p class="card-price"></p>
+      <button class="card-cta">Agregar al carrito</button>
+    </div>
+  `;
 
   const selectEl = card.querySelector(".card-select");
   const qtyEl = card.querySelector(".card-qty");
@@ -293,30 +293,28 @@ card.innerHTML = `
       ctaEl.disabled = true;
       ctaEl.textContent = "Sin Stock";
       ctaEl.classList.add("disabled");
+      priceEl.textContent = ""; // Oculta el precio si está agotado
     } else {
       card.classList.remove("out-of-stock");
       ctaEl.disabled = false;
       ctaEl.textContent = "Agregar al carrito";
       ctaEl.classList.remove("disabled");
-    }
 
-    const qty = Math.max(1, parseInt(qtyEl.value) || 1);
-
-    // NUEVO: Verificar si el sabor seleccionado tiene precio promocional
-    const activeUsd = (flavor.promoUsd && flavor.promoUsd < flavor.usd) ? flavor.promoUsd : flavor.usd;
-    
-    // Si está en oferta, mostramos el precio anterior tachado y el de oferta calculado
-    if (flavor.promoUsd && flavor.promoUsd < flavor.usd) {
-      const oldTotal = priceFor(flavor.usd) * qty;
-      const promoTotal = priceFor(flavor.promoUsd) * qty;
+      const qty = Math.max(1, parseInt(qtyEl.value) || 1);
+      const activeUsd = (flavor.promoUsd && flavor.promoUsd < flavor.usd) ? flavor.promoUsd : flavor.usd;
       
-      priceEl.innerHTML = `
-        <span class="old-price">${fmtARS(oldTotal)}</span>
-        <span class="promo-price">${fmtARS(promoTotal)}</span>
-      `;
-    } else {
-      const total = priceFor(activeUsd) * qty;
-      priceEl.textContent = fmtARS(total);
+      if (flavor.promoUsd && flavor.promoUsd < flavor.usd) {
+        const oldTotal = priceFor(flavor.usd) * qty;
+        const promoTotal = priceFor(flavor.promoUsd) * qty;
+        
+        priceEl.innerHTML = `
+          <span class="old-price">${fmtARS(oldTotal)}</span>
+          <span class="promo-price">${fmtARS(promoTotal)}</span>
+        `;
+      } else {
+        const total = priceFor(activeUsd) * qty;
+        priceEl.textContent = fmtARS(total);
+      }
     }
   }
 
@@ -329,7 +327,6 @@ card.innerHTML = `
 
     const qty = Math.max(1, parseInt(qtyEl.value) || 1);
 
-    // Si tiene promo, enviamos al carrito el precio con descuento
     const finalUsd = (flavor.promoUsd && flavor.promoUsd < flavor.usd) ? flavor.promoUsd : flavor.usd;
 
     addToCart({
@@ -396,36 +393,27 @@ function renderProducts(searchTerm = "") {
   generarFiltrosMarcas(PRODUCTS);
 
   if (home && query === "") {
-    const categories = ["descartables", "recargables", "liquidos"];
+      const gridDestacados = document.getElementById("grid-destacados");
+      if (!gridDestacados) return;
 
-    categories.forEach(category => {
-      const container = containers[category];
-      if (!container) return;
-
-      // Modifica tu filtro para ser más flexible:
-      let featuredProducts = PRODUCTS.filter(p => p.category === category && (p.featured === true || String(p.featured).toLowerCase() === 'true'));
+      let featuredProducts = PRODUCTS.filter(p => p.featured === true || String(p.featured).toLowerCase() === 'true');
 
       if (featuredProducts.length === 0) {
-        featuredProducts = PRODUCTS.filter(p => p.category === category).slice(0, 3);
+        featuredProducts = PRODUCTS.slice(0, 6);
       }
 
       featuredProducts.sort((a, b) => {
         return (isProductOutOfStock(a) ? 1 : 0) - (isProductOutOfStock(b) ? 1 : 0);
       });
 
-      const homeGrid = document.createElement("div");
-      homeGrid.className = "grid";
-
+      gridDestacados.innerHTML = "";
       featuredProducts.forEach(product => {
         const card = createProductCard(product);
-        homeGrid.appendChild(card);
+        gridDestacados.appendChild(card);
       });
 
-      container.appendChild(homeGrid);
-    });
-
-    return;
-  }
+      return;
+    }
 
   const filteredGrouped = {};
 
