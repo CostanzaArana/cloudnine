@@ -1,8 +1,8 @@
 :root {
-  --ink: #F2F1EC;
-  --font-titles: 'Montserrat', sans-serif;
-  --font-body: 'Inter', sans-serif;
-  --paper: #0C0C0C;
+  --ink: #f2f1ec;
+  --font-titles: "Montserrat", sans-serif;
+  --font-body: "Inter", sans-serif;
+  --paper: #0c0c0c;
   --line: rgba(242, 241, 236, 0.14);
 }
 
@@ -14,9 +14,13 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, h4, .brand-tag {
+h1,
+h2,
+h3,
+h4,
+.brand-tag {
   font-family: var(--font-titles);
-  text-transform: uppercase; 
+  text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
@@ -91,12 +95,20 @@ nav {
   width: 20px;
   height: 1px;
   background: var(--ink);
-  transition: transform .25s ease, opacity .25s ease;
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
 }
 
-.menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
-.menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
-.menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+.menu-toggle[aria-expanded="true"] span:nth-child(1) {
+  transform: translateY(6px) rotate(45deg);
+}
+.menu-toggle[aria-expanded="true"] span:nth-child(2) {
+  opacity: 0;
+}
+.menu-toggle[aria-expanded="true"] span:nth-child(3) {
+  transform: translateY(-6px) rotate(-45deg);
+}
 
 /* Acciones a la Derecha (Lupa + Carrito) */
 .topbar-actions {
@@ -166,7 +178,9 @@ nav {
   transform: translateY(-120%);
   opacity: 0;
   pointer-events: none;
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  transition:
+    transform 0.25s ease,
+    opacity 0.25s ease;
   font-family: var(--font-body);
 }
 
@@ -178,7 +192,7 @@ nav {
 
 #searchInput {
   flex: 1;
-  background: #1A1A18;
+  background: #1a1a18;
   color: var(--ink);
   border: 1px solid var(--line);
   padding: 0.6rem 0.9rem;
@@ -221,7 +235,11 @@ HEADER / HERO PRINCIPAL
   padding: 3.5rem 1.4rem 2rem;
   text-align: center;
   border-bottom: 1px solid var(--line);
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.03) 0%,
+    transparent 70%
+  );
 }
 
 .main-header h1 {
@@ -250,7 +268,7 @@ MENÚ LATERAL OVERLAY
   gap: 1.6rem;
   padding: 4rem 2rem 2rem;
   transform: translateX(-100%);
-  transition: transform .3s ease;
+  transition: transform 0.3s ease;
   z-index: 1000;
   font-family: var(--font-titles);
 }
@@ -302,7 +320,7 @@ MENÚ LATERAL OVERLAY
 }
 
 .menu-group summary::after {
-  content: '›';
+  content: "›";
   font-size: 1.4rem;
   transition: transform 0.2s ease;
 }
@@ -345,7 +363,7 @@ PANEL DE CARRITO
   border-left: 1px solid var(--line);
   padding: 4rem 1.6rem 1.6rem;
   transform: translateX(100%);
-  transition: transform .3s ease;
+  transition: transform 0.3s ease;
   overflow-y: auto;
   z-index: 1000;
   box-sizing: border-box;
@@ -402,7 +420,9 @@ PANEL DE CARRITO
   font-size: 0.9rem;
   font-weight: 600;
   line-height: 1;
-  transition: background 0.2s ease, color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease;
   font-family: var(--font-body);
 }
 
@@ -451,7 +471,9 @@ PANEL DE CARRITO
   cursor: pointer;
   padding: 0.2rem 0.5rem;
   border-radius: 4px;
-  transition: color 0.2s ease, transform 0.2s ease;
+  transition:
+    color 0.2s ease,
+    transform 0.2s ease;
   font-family: var(--font-body);
 }
 
@@ -483,7 +505,9 @@ CATÁLOGO Y PRODUCTOS
 .section-head-link {
   color: inherit;
   text-decoration: none;
-  transition: color 0.2s ease, opacity 0.2s ease;
+  transition:
+    color 0.2s ease,
+    opacity 0.2s ease;
 }
 
 .section-title-link:hover,
@@ -510,7 +534,7 @@ CATÁLOGO Y PRODUCTOS
   margin: 0 0 15px;
   font-size: 1.4rem;
   font-family: var(--font-titles);
-  text-transform: uppercase; 
+  text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
@@ -533,7 +557,9 @@ CATÁLOGO Y PRODUCTOS
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .card:hover {
@@ -635,7 +661,7 @@ CATÁLOGO Y PRODUCTOS
 .card-select,
 .card-qty {
   width: 100%;
-  background: #1A1A18;
+  background: #1a1a18;
   color: var(--ink);
   border: 1px solid var(--line);
   padding: 0.4rem;
@@ -658,7 +684,9 @@ CATÁLOGO Y PRODUCTOS
   cursor: pointer;
   text-decoration: none;
   border-radius: 6px;
-  transition: opacity 0.2s ease, background-color 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    background-color 0.2s ease;
   width: 100%;
   box-sizing: border-box;
   text-align: center;
@@ -1134,7 +1162,9 @@ TOAST NOTIFICATION
   z-index: 2000;
   transform: translateY(100px);
   opacity: 0;
-  transition: transform 0.3s ease, opacity 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    opacity 0.3s ease;
   pointer-events: none;
   font-family: var(--font-body);
 }
@@ -1170,7 +1200,8 @@ RESPONSIVE DESIGN / MEDIA QUERIES
     margin-bottom: 6px;
   }
 
-  .card-select, .card-qty {
+  .card-select,
+  .card-qty {
     padding: 8px;
     font-size: 0.85rem;
     border-radius: 8px;
@@ -1192,7 +1223,7 @@ RESPONSIVE DESIGN / MEDIA QUERIES
     align-items: flex-start;
     gap: 6px;
   }
-  
+
   .filter-label {
     min-width: auto;
   }
@@ -1218,7 +1249,9 @@ BOTÓN FLOTANTE DE WHATSAPP
   text-decoration: none;
   box-shadow: 0 4px 14px rgba(37, 211, 102, 0.45);
   z-index: 999;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 .whatsapp-float:hover {
@@ -1279,7 +1312,11 @@ HERO MEJORADO
   padding: 4rem 1.4rem 3.5rem;
   text-align: center;
   border-bottom: 1px solid var(--line);
-  background: radial-gradient(circle at center, rgba(255, 255, 255, 0.04) 0%, transparent 70%);
+  background: radial-gradient(
+    circle at center,
+    rgba(255, 255, 255, 0.04) 0%,
+    transparent 70%
+  );
 }
 
 .hero-content {
@@ -1423,14 +1460,20 @@ SECCIÓN DE CATEGORÍAS VISUALES
   align-items: flex-end;
   padding: 1.2rem;
   box-sizing: border-box;
-  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  transition:
+    transform 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease;
 }
-
 
 .category-card-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.85) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
   transition: opacity 0.3s ease;
 }
 
@@ -1464,7 +1507,11 @@ SECCIÓN DE CATEGORÍAS VISUALES
 }
 
 .category-card:hover .category-card-overlay {
-  background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.75) 100%);
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.1) 0%,
+    rgba(0, 0, 0, 0.75) 100%
+  );
 }
 
 /* Responsive para celulares */
@@ -1554,8 +1601,15 @@ HERO & COMPONENTES DE SUBPÁGINAS (CATÁLOGOS)
 .category-hero::before {
   content: "";
   position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(180deg, rgba(12,12,12,0.65) 0%, rgba(12,12,12,0.95) 100%);
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(12, 12, 12, 0.65) 0%,
+    rgba(12, 12, 12, 0.95) 100%
+  );
   z-index: 1;
 }
 
@@ -1591,9 +1645,15 @@ HERO & COMPONENTES DE SUBPÁGINAS (CATÁLOGOS)
 }
 
 /* Fondos específicos por subpágina */
-.descartables-bg { background-image: url('assets/descartables.jpg'); }
-.recargables-bg { background-image: url('assets/recargables.jpg'); }
-.liquidos-bg { background-image: url('assets/liquidos.jpg'); }
+.descartables-bg {
+  background-image: url("assets/descartables.jpg");
+}
+.recargables-bg {
+  background-image: url("assets/recargables.jpg");
+}
+.liquidos-bg {
+  background-image: url("assets/liquidos.jpg");
+}
 
 /* TOOLBAR / CONTENEDOR DE FILTROS EN SUBPÁGINAS */
 .filter-toolbar {
@@ -1651,4 +1711,3 @@ HERO & COMPONENTES DE SUBPÁGINAS (CATÁLOGOS)
     font-size: 1.8rem;
   }
 }
-

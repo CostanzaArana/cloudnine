@@ -26,7 +26,6 @@ if (backdrop) {
   });
 }
 
-
 // ==========================
 // MENÚ LATERAL OVERLAY
 // ==========================
@@ -62,7 +61,6 @@ if (menuClose) {
   menuClose.addEventListener("click", closeMenu);
 }
 
-
 // ==========================
 // CONFIGURACIÓN Y DÓLAR BLUE
 // ==========================
@@ -74,8 +72,7 @@ const WHATSAPP_NUMBER = "5493547322726";
 const WORKER_MP_URL = "https://crear-preferencia-mp.cotiarana.workers.dev";
 
 let dolarBlueRate = null;
-let marcaSeleccionada = 'all'; // <--- AGREGAR ESTA LÍNEA AQUÍ
-
+let marcaSeleccionada = "all";
 
 // ==========================
 // TOAST NOTIFICATION
@@ -93,24 +90,22 @@ function showToast(message) {
   }, 2500);
 }
 
-
 // URL generada en el paso 1 por Google Apps Script
-const GOOGLE_SHEET_URL = "https://script.google.com/macros/s/AKfycbwgOFv5CTOK2MQmwbL17LUnCRfGr3A1-G5aPvo3JE9-f7_iHzyJDxuVe8B5MnCldKh2aw/exec";
+const GOOGLE_SHEET_URL =
+  "https://script.google.com/macros/s/AKfycbwgOFv5CTOK2MQmwbL17LUnCRfGr3A1-G5aPvo3JE9-f7_iHzyJDxuVe8B5MnCldKh2aw/exec";
 
 let PRODUCTS = [];
-
 
 // ==========================
 // FORMATO DE PESOS
 // ==========================
 
-const fmtARS = n =>
+const fmtARS = (n) =>
   n.toLocaleString("es-AR", {
     style: "currency",
     currency: "ARS",
-    maximumFractionDigits: 0
+    maximumFractionDigits: 0,
   });
-
 
 // ==========================
 // CÁLCULO DEL PRECIO
@@ -122,7 +117,6 @@ function priceFor(usd) {
   return Math.floor((precio + 100) / 500) * 500;
 }
 
-
 // ==========================
 // Mapear los datos que vienen desde Google Sheets
 // ==========================
@@ -132,7 +126,7 @@ async function fetchProductsFromSheet() {
   const cachedData = localStorage.getItem("cloudnine_products");
   if (cachedData) {
     PRODUCTS = JSON.parse(cachedData);
-    if (typeof renderProducts === "function") renderProducts(); 
+    if (typeof renderProducts === "function") renderProducts();
   }
 
   try {
@@ -141,24 +135,29 @@ async function fetchProductsFromSheet() {
 
     const grouped = {};
 
-    rawData.forEach(row => {
+    rawData.forEach((row) => {
       // Clave única por producto
       const key = `${row.category}_${row.brand}_${row.name}`.toLowerCase();
-      
+
       // Evaluamos si esta fila específica está marcada como destacada
-      const isRowFeatured = row.featured === true || String(row.featured).toUpperCase() === "TRUE";
+      const isRowFeatured =
+        row.featured === true || String(row.featured).toUpperCase() === "TRUE";
 
       if (!grouped[key]) {
         grouped[key] = {
           brand: String(row.brand || "").trim(),
           name: String(row.name || "").trim(),
-          category: String(row.category || "").trim().toLowerCase(),
-          image: row.image ? String(row.image).trim() : "assets/placeholder.jpg",
+          category: String(row.category || "")
+            .trim()
+            .toLowerCase(),
+          image: row.image
+            ? String(row.image).trim()
+            : "assets/placeholder.jpg",
           featured: isRowFeatured,
           puffs: row.puffs ? Number(String(row.puffs).replace(",", ".")) : null,
           ml: row.ml ? Number(String(row.ml).replace(",", ".")) : null,
           info: row.info ? String(row.info) : null,
-          flavors: []
+          flavors: [],
         };
       } else {
         // SI EL PRODUCTO YA EXISTE: si esta nueva fila tiene featured = TRUE, actualizamos el producto
@@ -169,25 +168,30 @@ async function fetchProductsFromSheet() {
 
       // Agregar sabor a la lista de opciones
       if (row.flavor) {
-          grouped[key].flavors.push({
-            name: String(row.flavor).trim(),
-            usd: Number(String(row.price_usd || 0).replace(",", ".")),
-            // NUEVO: Precio en promoción (si existe)
-            promoUsd: row.promo_price_usd ? Number(String(row.promo_price_usd).replace(",", ".")) : null,
-            outOfStock: row.flavor_outofstock === true || String(row.flavor_outofstock).toUpperCase() === "TRUE",
+        grouped[key].flavors.push({
+          name: String(row.flavor).trim(),
+          usd: Number(String(row.price_usd || 0).replace(",", ".")),
+          // NUEVO: Precio en promoción (si existe)
+          promoUsd: row.promo_price_usd
+            ? Number(String(row.promo_price_usd).replace(",", "."))
+            : null,
+          outOfStock:
+            row.flavor_outofstock === true ||
+            String(row.flavor_outofstock).toUpperCase() === "TRUE",
         });
       }
     });
 
-    // Convertimos el objeto agrupado a array y calculamos automáticamente 
+    // Convertimos el objeto agrupado a array y calculamos automáticamente
     // si el producto general está agotado basándonos en los sabores
-    PRODUCTS = Object.values(grouped).map(product => {
-      const isFullyOutOfStock = product.flavors.length > 0 && 
-                                product.flavors.every(flavor => flavor.outOfStock);
+    PRODUCTS = Object.values(grouped).map((product) => {
+      const isFullyOutOfStock =
+        product.flavors.length > 0 &&
+        product.flavors.every((flavor) => flavor.outOfStock);
 
       return {
         ...product,
-        outOfStock: isFullyOutOfStock
+        outOfStock: isFullyOutOfStock,
       };
     });
 
@@ -196,12 +200,10 @@ async function fetchProductsFromSheet() {
 
     // 3. Volver a renderizar solo para refrescar con datos super actualizados
     if (typeof renderProducts === "function") renderProducts();
-
   } catch (error) {
     console.error("Error al obtener los datos de Google Sheets:", error);
   }
 }
-
 
 // ==========================
 // DETECTAR PÁGINA HOME
@@ -209,9 +211,8 @@ async function fetchProductsFromSheet() {
 
 function isHomePage() {
   const file = window.location.pathname.split("/").pop();
-  return (file === "" || file === "index.html" || file === "index");
+  return file === "" || file === "index.html" || file === "index";
 }
-
 
 // ==========================
 // CREAR TARJETA DE PRODUCTO
@@ -223,17 +224,17 @@ function createProductCard(product) {
 
   // 1. ORDENAMOS LOS SABORES: Disponibles primero, agotados al final
   const sortedFlavors = [...product.flavors].sort((a, b) => {
-    const aOut = (a.outOfStock || product.outOfStock) ? 1 : 0;
-    const bOut = (b.outOfStock || product.outOfStock) ? 1 : 0;
+    const aOut = a.outOfStock || product.outOfStock ? 1 : 0;
+    const bOut = b.outOfStock || product.outOfStock ? 1 : 0;
     return aOut - bOut;
   });
 
   // 2. GENERAMOS LAS OPCIONES EN BASE A LA LISTA ORDENADA
   const flavorOptions = sortedFlavors
-    .map(flavor => {
+    .map((flavor) => {
       const isOut = flavor.outOfStock || product.outOfStock;
       const label = flavor.name + (isOut ? " (Agotado)" : "");
-      return `<option value="${flavor.name}" ${isOut ? 'data-out="true"' : ''}>${label}</option>`;
+      return `<option value="${flavor.name}" ${isOut ? 'data-out="true"' : ""}>${label}</option>`;
     })
     .join("");
 
@@ -250,8 +251,12 @@ function createProductCard(product) {
   const imageSrc = product.image || "assets/placeholder.jpg";
 
   // Verificamos si al menos un sabor tiene promoción para poner la etiqueta en la imagen
-  const hasAnyPromo = product.flavors.some(f => f.promoUsd && f.promoUsd < f.usd);
-  const badgeHTML = hasAnyPromo ? `<span class="badge-promo">OFERTA</span>` : "";
+  const hasAnyPromo = product.flavors.some(
+    (f) => f.promoUsd && f.promoUsd < f.usd,
+  );
+  const badgeHTML = hasAnyPromo
+    ? `<span class="badge-promo">OFERTA</span>`
+    : "";
 
   card.innerHTML = `
     <div class="card-img">
@@ -279,7 +284,7 @@ function createProductCard(product) {
 
   function currentFlavor() {
     const selectedName = selectEl.value;
-    return product.flavors.find(flavor => flavor.name === selectedName);
+    return product.flavors.find((flavor) => flavor.name === selectedName);
   }
 
   function updateState() {
@@ -301,12 +306,15 @@ function createProductCard(product) {
       ctaEl.classList.remove("disabled");
 
       const qty = Math.max(1, parseInt(qtyEl.value) || 1);
-      const activeUsd = (flavor.promoUsd && flavor.promoUsd < flavor.usd) ? flavor.promoUsd : flavor.usd;
-      
+      const activeUsd =
+        flavor.promoUsd && flavor.promoUsd < flavor.usd
+          ? flavor.promoUsd
+          : flavor.usd;
+
       if (flavor.promoUsd && flavor.promoUsd < flavor.usd) {
         const oldTotal = priceFor(flavor.usd) * qty;
         const promoTotal = priceFor(flavor.promoUsd) * qty;
-        
+
         priceEl.innerHTML = `
           <span class="old-price">${fmtARS(oldTotal)}</span>
           <span class="promo-price">${fmtARS(promoTotal)}</span>
@@ -327,14 +335,17 @@ function createProductCard(product) {
 
     const qty = Math.max(1, parseInt(qtyEl.value) || 1);
 
-    const finalUsd = (flavor.promoUsd && flavor.promoUsd < flavor.usd) ? flavor.promoUsd : flavor.usd;
+    const finalUsd =
+      flavor.promoUsd && flavor.promoUsd < flavor.usd
+        ? flavor.promoUsd
+        : flavor.usd;
 
     addToCart({
       brand: product.brand,
       name: product.name,
       flavor: flavor.name,
       usd: finalUsd,
-      qty
+      qty,
     });
   });
 
@@ -350,19 +361,22 @@ function createProductCard(product) {
 let activePuffFilter = "all";
 
 function renderProducts(searchTerm = "") {
-  const genericGrid = document.getElementById("grid-productos") || document.getElementById("productos") || document.getElementById("catalogGrid");
+  const genericGrid =
+    document.getElementById("grid-productos") ||
+    document.getElementById("productos") ||
+    document.getElementById("catalogGrid");
 
   const containers = {
     descartables: document.getElementById("grid-descartables") || genericGrid,
     recargables: document.getElementById("grid-recargables") || genericGrid,
-    liquidos: document.getElementById("grid-liquidos") || genericGrid
+    liquidos: document.getElementById("grid-liquidos") || genericGrid,
   };
 
   const home = isHomePage();
   const query = searchTerm.toLowerCase().trim();
 
   const cleaned = new Set();
-  Object.values(containers).forEach(container => {
+  Object.values(containers).forEach((container) => {
     if (container && !cleaned.has(container)) {
       container.innerHTML = "";
       cleaned.add(container);
@@ -372,13 +386,13 @@ function renderProducts(searchTerm = "") {
   const isProductOutOfStock = (p) => {
     if (p.outOfStock) return true;
     if (p.flavors && p.flavors.length > 0) {
-      return p.flavors.every(f => f.outOfStock);
+      return p.flavors.every((f) => f.outOfStock);
     }
     return false;
   };
 
   const fullGrouped = {};
-  PRODUCTS.forEach(product => {
+  PRODUCTS.forEach((product) => {
     if (!fullGrouped[product.category]) {
       fullGrouped[product.category] = {};
     }
@@ -393,31 +407,35 @@ function renderProducts(searchTerm = "") {
   generarFiltrosMarcas(PRODUCTS);
 
   if (home && query === "") {
-      const gridDestacados = document.getElementById("grid-destacados");
-      if (!gridDestacados) return;
+    const gridDestacados = document.getElementById("grid-destacados");
+    if (!gridDestacados) return;
 
-      let featuredProducts = PRODUCTS.filter(p => p.featured === true || String(p.featured).toLowerCase() === 'true');
+    let featuredProducts = PRODUCTS.filter(
+      (p) => p.featured === true || String(p.featured).toLowerCase() === "true",
+    );
 
-      if (featuredProducts.length === 0) {
-        featuredProducts = PRODUCTS.slice(0, 6);
-      }
-
-      featuredProducts.sort((a, b) => {
-        return (isProductOutOfStock(a) ? 1 : 0) - (isProductOutOfStock(b) ? 1 : 0);
-      });
-
-      gridDestacados.innerHTML = "";
-      featuredProducts.forEach(product => {
-        const card = createProductCard(product);
-        gridDestacados.appendChild(card);
-      });
-
-      return;
+    if (featuredProducts.length === 0) {
+      featuredProducts = PRODUCTS.slice(0, 6);
     }
+
+    featuredProducts.sort((a, b) => {
+      return (
+        (isProductOutOfStock(a) ? 1 : 0) - (isProductOutOfStock(b) ? 1 : 0)
+      );
+    });
+
+    gridDestacados.innerHTML = "";
+    featuredProducts.forEach((product) => {
+      const card = createProductCard(product);
+      gridDestacados.appendChild(card);
+    });
+
+    return;
+  }
 
   const filteredGrouped = {};
 
-PRODUCTS.forEach(product => {
+  PRODUCTS.forEach((product) => {
     // NUEVO: Filtro por marca seleccionada
     if (marcaSeleccionada !== "all" && product.brand !== marcaSeleccionada) {
       return;
@@ -426,15 +444,22 @@ PRODUCTS.forEach(product => {
     if (query !== "") {
       const matchBrand = product.brand.toLowerCase().includes(query);
       const matchName = product.name.toLowerCase().includes(query);
-      const matchFlavor = product.flavors.some(f => f.name.toLowerCase().includes(query));
+      const matchFlavor = product.flavors.some((f) =>
+        f.name.toLowerCase().includes(query),
+      );
 
       if (!matchBrand && !matchName && !matchFlavor) return;
     }
 
-    if (product.category === "descartables" && activePuffFilter !== "all" && product.puffs) {
+    if (
+      product.category === "descartables" &&
+      activePuffFilter !== "all" &&
+      product.puffs
+    ) {
       const puffs = product.puffs;
       if (activePuffFilter === "low" && puffs >= 10000) return;
-      if (activePuffFilter === "mid" && (puffs < 10000 || puffs > 25000)) return;
+      if (activePuffFilter === "mid" && (puffs < 10000 || puffs > 25000))
+        return;
       if (activePuffFilter === "high" && puffs < 30000) return;
     }
 
@@ -449,28 +474,36 @@ PRODUCTS.forEach(product => {
     filteredGrouped[product.category][product.brand].push(product);
   });
 
-  Object.keys(containers).forEach(category => {
+  Object.keys(containers).forEach((category) => {
     const container = containers[category];
     if (!container) return;
 
-    if (!filteredGrouped[category] || Object.keys(filteredGrouped[category]).length === 0) {
-      if ((query !== "" || activePuffFilter !== "all") && container.innerHTML === "") {
+    if (
+      !filteredGrouped[category] ||
+      Object.keys(filteredGrouped[category]).length === 0
+    ) {
+      if (
+        (query !== "" || activePuffFilter !== "all") &&
+        container.innerHTML === ""
+      ) {
         container.innerHTML = `<p class="no-results">No se encontraron productos con estos filtros.</p>`;
       }
       return;
     }
 
-    Object.keys(filteredGrouped[category]).forEach(brand => {
+    Object.keys(filteredGrouped[category]).forEach((brand) => {
       const products = filteredGrouped[category][brand];
 
       const sortedProducts = [...products].sort((a, b) => {
-        return (isProductOutOfStock(a) ? 1 : 0) - (isProductOutOfStock(b) ? 1 : 0);
+        return (
+          (isProductOutOfStock(a) ? 1 : 0) - (isProductOutOfStock(b) ? 1 : 0)
+        );
       });
 
       const brandSection = document.createElement("div");
       brandSection.className = "brand-section";
 
-      const brandSlug = brand.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      const brandSlug = brand.toLowerCase().replace(/[^a-z0-9]+/g, "-");
       brandSection.id = `${category}-${brandSlug}`;
 
       const brandTitle = document.createElement("h3");
@@ -480,7 +513,7 @@ PRODUCTS.forEach(product => {
       const brandGrid = document.createElement("div");
       brandGrid.className = "grid brand-grid";
 
-      sortedProducts.forEach(product => {
+      sortedProducts.forEach((product) => {
         const card = createProductCard(product);
         brandGrid.appendChild(card);
       });
@@ -495,7 +528,6 @@ PRODUCTS.forEach(product => {
 
   handleInitialHashScroll();
 }
-
 
 // ==========================
 // SCROLL AUTOMÁTICO (#HASH)
@@ -512,7 +544,6 @@ function handleInitialHashScroll() {
     }, 100);
   }
 }
-
 
 // ==========================
 // MANEJO DE BUSCADOR Y LUPA
@@ -555,7 +586,6 @@ if (searchInput) {
   });
 }
 
-
 // ==========================
 // FILTROS DE PUFFS
 // ==========================
@@ -565,9 +595,9 @@ const puffFiltersContainer = document.getElementById("puffFilters");
 if (puffFiltersContainer) {
   const filterBtns = puffFiltersContainer.querySelectorAll(".filter-btn");
 
-  filterBtns.forEach(btn => {
+  filterBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
-      filterBtns.forEach(b => b.classList.remove("active"));
+      filterBtns.forEach((b) => b.classList.remove("active"));
       btn.classList.add("active");
 
       activePuffFilter = btn.dataset.range;
@@ -577,50 +607,58 @@ if (puffFiltersContainer) {
   });
 }
 
-
-
 function ordenarProductos(orden, btnElement) {
   // 1. Estilos visuales de los botones de precio
-  document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+  document
+    .querySelectorAll(".sort-btn")
+    .forEach((btn) => btn.classList.remove("active"));
   if (btnElement) {
-    btnElement.classList.add('active');
+    btnElement.classList.add("active");
   }
 
   // 2. Buscamos todas las grillas individuales de cada marca (.grid)
-  const grids = document.querySelectorAll('.grid');
+  const grids = document.querySelectorAll(".grid");
 
-  grids.forEach(grid => {
+  grids.forEach((grid) => {
     // Obtenemos solo las tarjetas (.card) de ESTA grilla
-    const cards = Array.from(grid.children).filter(child => child.classList.contains('card'));
-    
+    const cards = Array.from(grid.children).filter((child) =>
+      child.classList.contains("card"),
+    );
+
     if (cards.length <= 1) return;
 
     // 3. Ordenamos las tarjetas considerando disponibilidad y precio
     cards.sort((a, b) => {
       // Verificamos si la tarjeta o el botón están marcados como agotados / sin stock
-      const sinStockA = a.classList.contains('out-of-stock') || a.querySelector('.card-cta')?.disabled;
-      const sinStockB = b.classList.contains('out-of-stock') || b.querySelector('.card-cta')?.disabled;
+      const sinStockA =
+        a.classList.contains("out-of-stock") ||
+        a.querySelector(".card-cta")?.disabled;
+      const sinStockB =
+        b.classList.contains("out-of-stock") ||
+        b.querySelector(".card-cta")?.disabled;
 
       // REGLA 1: Si uno no tiene stock y el otro sí, el sin stock va al final
       if (sinStockA && !sinStockB) return 1;
       if (!sinStockA && sinStockB) return -1;
 
       // REGLA 2: Si ambos tienen el mismo estado de stock, ordenamos por precio
-      const precioAEl = a.querySelector('.card-price');
-      const precioBEl = b.querySelector('.card-price');
-      
-      const precioA = precioAEl ? parseFloat(precioAEl.textContent.replace(/[^0-9.-]+/g, '')) || 0 : 0;
-      const precioB = precioBEl ? parseFloat(precioBEl.textContent.replace(/[^0-9.-]+/g, '')) || 0 : 0;
+      const precioAEl = a.querySelector(".card-price");
+      const precioBEl = b.querySelector(".card-price");
 
-      return orden === 'asc' ? precioA - precioB : precioB - precioA;
+      const precioA = precioAEl
+        ? parseFloat(precioAEl.textContent.replace(/[^0-9.-]+/g, "")) || 0
+        : 0;
+      const precioB = precioBEl
+        ? parseFloat(precioBEl.textContent.replace(/[^0-9.-]+/g, "")) || 0
+        : 0;
+
+      return orden === "asc" ? precioA - precioB : precioB - precioA;
     });
 
     // 4. Reorganizamos las tarjetas en su grilla
-    cards.forEach(card => grid.appendChild(card));
+    cards.forEach((card) => grid.appendChild(card));
   });
 }
-
-
 
 // ==========================================
 // VERIFICACIÓN DE MAYORÍA DE EDAD (+18)
@@ -655,9 +693,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-
-
-
 // ==========================
 // NAVEGACIÓN Y SUB-MENÚS
 // ==========================
@@ -665,7 +700,7 @@ document.addEventListener("DOMContentLoaded", () => {
 function buildNavigationMenu(grouped) {
   const categories = ["descartables", "recargables", "liquidos"];
 
-  categories.forEach(cat => {
+  categories.forEach((cat) => {
     const subMenu = document.getElementById(`submenu-${cat}`);
     if (!subMenu) return;
 
@@ -677,8 +712,8 @@ function buildNavigationMenu(grouped) {
     subMenu.appendChild(allLink);
 
     if (grouped[cat]) {
-      Object.keys(grouped[cat]).forEach(brand => {
-        const brandSlug = brand.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+      Object.keys(grouped[cat]).forEach((brand) => {
+        const brandSlug = brand.toLowerCase().replace(/[^a-z0-9]+/g, "-");
         const targetHash = `${cat}-${brandSlug}`;
         const brandLink = document.createElement("a");
         brandLink.href = `${cat}.html#${targetHash}`;
@@ -704,7 +739,6 @@ function buildNavigationMenu(grouped) {
   });
 }
 
-
 // ==========================
 // CARRITO DE COMPRAS
 // ==========================
@@ -720,7 +754,9 @@ function saveCart(cart) {
 
 function addToCart(item) {
   const cart = getCart();
-  const existing = cart.find(i => i.name === item.name && i.flavor === item.flavor);
+  const existing = cart.find(
+    (i) => i.name === item.name && i.flavor === item.flavor,
+  );
 
   if (existing) {
     existing.qty += item.qty;
@@ -756,7 +792,6 @@ function removeFromCart(index) {
   renderCartPanel();
 }
 
-
 // ==========================
 // CONTADOR DEL CARRITO
 // ==========================
@@ -770,7 +805,6 @@ function renderCartBadge() {
     cartCount.textContent = totalQty;
   }
 }
-
 
 // ==========================
 // PANEL DEL CARRITO Y ENVÍOS
@@ -811,9 +845,15 @@ function renderCartPanel() {
       </div>
     `;
 
-    row.querySelector(".minus").addEventListener("click", () => updateCartQty(index, -1));
-    row.querySelector(".plus").addEventListener("click", () => updateCartQty(index, 1));
-    row.querySelector(".cart-remove-btn").addEventListener("click", () => removeFromCart(index));
+    row
+      .querySelector(".minus")
+      .addEventListener("click", () => updateCartQty(index, -1));
+    row
+      .querySelector(".plus")
+      .addEventListener("click", () => updateCartQty(index, 1));
+    row
+      .querySelector(".cart-remove-btn")
+      .addEventListener("click", () => removeFromCart(index));
 
     itemsEl.appendChild(row);
   });
@@ -846,7 +886,6 @@ function renderCartPanel() {
     totalEl.textContent = `Total: ${fmtARS(total)}`;
   }
 }
-
 
 // ==========================
 // ABRIR Y CERRAR CARRITO
@@ -882,7 +921,6 @@ if (cartClose) {
   cartClose.addEventListener("click", closeCart);
 }
 
-
 // ==========================
 // PERSISTENCIA Y CHECKOUT POR WHATSAPP
 // ==========================
@@ -902,7 +940,7 @@ function saveCheckoutData() {
     method: deliverySelect?.value || "retiro",
     town: townSelect?.value || "",
     customTown: document.getElementById("clientCustomTown")?.value || "",
-    address: document.getElementById("clientAddress")?.value || ""
+    address: document.getElementById("clientAddress")?.value || "",
   };
 
   localStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify(checkoutData));
@@ -931,9 +969,9 @@ function restoreCheckoutData() {
       townSelect.dispatchEvent(new Event("change"));
     }
 
-    if (customTownInput && data.customTown) customTownInput.value = data.customTown;
+    if (customTownInput && data.customTown)
+      customTownInput.value = data.customTown;
     if (addressInput && data.address) addressInput.value = data.address;
-
   } catch (e) {
     console.error("Error al restaurar datos de checkout:", e);
   }
@@ -970,7 +1008,7 @@ if (townSelect) {
   });
 }
 
-["clientName", "clientAddress", "clientCustomTown"].forEach(id => {
+["clientName", "clientAddress", "clientCustomTown"].forEach((id) => {
   const el = document.getElementById(id);
   if (el) {
     el.addEventListener("input", saveCheckoutData);
@@ -1018,15 +1056,16 @@ async function pagarConMercadoPago() {
 
   if (method === "alrededores" && !town) {
     showToast("Por favor, especificá tu localidad");
-    if (customTownInput && townSelect && townSelect.value === "Otro") customTownInput.focus();
+    if (customTownInput && townSelect && townSelect.value === "Otro")
+      customTownInput.focus();
     return;
   }
 
-  const itemsMP = cart.map(item => ({
+  const itemsMP = cart.map((item) => ({
     title: `${item.brand ? item.brand + " " : ""}${item.name} (${item.flavor})`,
     quantity: item.qty,
     unit_price: priceFor(item.usd),
-    currency_id: "ARS"
+    currency_id: "ARS",
   }));
 
   if (method === "alrededores") {
@@ -1034,7 +1073,7 @@ async function pagarConMercadoPago() {
       title: "Costo de Envío (Alrededores)",
       quantity: 1,
       unit_price: 5000,
-      currency_id: "ARS"
+      currency_id: "ARS",
     });
   }
 
@@ -1046,8 +1085,8 @@ async function pagarConMercadoPago() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         items: itemsMP,
-        payer: { name: name, address: address, town: town }
-      })
+        payer: { name: name, address: address, town: town },
+      }),
     });
 
     const data = await respuesta.json();
@@ -1105,7 +1144,8 @@ if (cartCheckout) {
 
     if (method === "alrededores" && !town) {
       showToast("Por favor, especificá tu localidad");
-      if (customTownInput && townSelect && townSelect.value === "Otro") customTownInput.focus();
+      if (customTownInput && townSelect && townSelect.value === "Otro")
+        customTownInput.focus();
       return;
     }
 
@@ -1128,11 +1168,14 @@ if (cartCheckout) {
 
     msg += `\n📦 *Detalle del pedido:*\n`;
 
-    cart.forEach(item => {
+    cart.forEach((item) => {
       msg += `• ${item.brand ? item.brand + " " : ""}${item.name}${item.flavor ? " (" + item.flavor + ")" : ""} × ${item.qty}\n`;
     });
 
-    const subtotal = cart.reduce((sum, item) => sum + priceFor(item.usd) * item.qty, 0);
+    const subtotal = cart.reduce(
+      (sum, item) => sum + priceFor(item.usd) * item.qty,
+      0,
+    );
     const total = subtotal + shippingCost;
 
     if (shippingCost > 0) {
@@ -1143,9 +1186,9 @@ if (cartCheckout) {
       msg += `\n💳 *Total:* ${fmtARS(total)}`;
     }
 
-    const cleanPhone = String(WHATSAPP_NUMBER).replace(/[^0-9]/g, '');
+    const cleanPhone = String(WHATSAPP_NUMBER).replace(/[^0-9]/g, "");
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
-    
+
     window.open(whatsappUrl, "_blank");
 
     localStorage.removeItem("cloudnine_cart");
@@ -1161,7 +1204,6 @@ if (cartCheckout) {
     closeCart();
   });
 }
-
 
 // ==========================
 // DÓLAR BLUE E INICIALIZACIÓN
@@ -1184,7 +1226,9 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
     }
   } catch (e) {
-    console.warn("No se pudo obtener la cotización del dólar blue, usando respaldo.");
+    console.warn(
+      "No se pudo obtener la cotización del dólar blue, usando respaldo.",
+    );
   }
 
   // 3. Descargar productos desde la planilla de Google Sheets
@@ -1196,45 +1240,57 @@ document.addEventListener("DOMContentLoaded", async () => {
   renderCartBadge();
 });
 
-
-
 // ==========================
 // FILTRO POR MARCAS Y RANGOS
 // ==========================
 
 function generarFiltrosMarcas(productos) {
-  const brandContainer = document.getElementById('brandFilters');
+  const brandContainer = document.getElementById("brandFilters");
   if (!brandContainer) return;
 
   // Detectar categoría actual de la página
-  const currentPage = window.location.pathname.split("/").pop().replace(".html", "");
-  
+  const currentPage = window.location.pathname
+    .split("/")
+    .pop()
+    .replace(".html", "");
+
   // Filtrar productos por la categoría activa si aplica
-  const productosCategoria = ['descartables', 'recargables', 'liquidos'].includes(currentPage)
-    ? productos.filter(p => p.category === currentPage)
+  const productosCategoria = [
+    "descartables",
+    "recargables",
+    "liquidos",
+  ].includes(currentPage)
+    ? productos.filter((p) => p.category === currentPage)
     : productos;
 
   // Extraer marcas únicas
-  const marcas = ['all', ...new Set(productosCategoria.map(p => p.brand).filter(Boolean))];
+  const marcas = [
+    "all",
+    ...new Set(productosCategoria.map((p) => p.brand).filter(Boolean)),
+  ];
 
   // Generar HTML de botones
-  brandContainer.innerHTML = marcas.map(marca => `
+  brandContainer.innerHTML = marcas
+    .map(
+      (marca) => `
     <button 
-      class="filter-btn ${marca === marcaSeleccionada ? 'active' : ''}" 
+      class="filter-btn ${marca === marcaSeleccionada ? "active" : ""}" 
       data-brand="${marca}"
       onclick="filtrarPorMarca('${marca}', this)">
-      ${marca === 'all' ? 'Todas' : marca}
+      ${marca === "all" ? "Todas" : marca}
     </button>
-  `).join('');
+  `,
+    )
+    .join("");
 }
 
 function filtrarPorMarca(marca, boton) {
   marcaSeleccionada = marca;
 
   // Marcar botón activo
-  const botones = document.querySelectorAll('#brandFilters .filter-btn');
-  botones.forEach(btn => btn.classList.remove('active'));
-  if (boton) boton.classList.add('active');
+  const botones = document.querySelectorAll("#brandFilters .filter-btn");
+  botones.forEach((btn) => btn.classList.remove("active"));
+  if (boton) boton.classList.add("active");
 
   // Volver a renderizar productos aplicando el filtro
   const currentQuery = searchInput ? searchInput.value : "";
