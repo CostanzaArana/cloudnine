@@ -437,12 +437,45 @@ if (btnMercadoPago) {
 }
 
 // =========================================================
-// 8. INICIALIZACIÓN Y DÓLAR BLUE API
+// CARGA DE PRODUCTOS DESDE GOOGLE SHEETS
 // =========================================================
 
-if (typeof fetchProductsFromSheet === "function") {
-  fetchProductsFromSheet();
+async function fetchProductsFromSheet() {
+  const container = document.getElementById("productsContainer");
+  if (!container) return;
+
+  container.innerHTML = "<p class='loading-text'>Cargando catálogo...</p>";
+
+  try {
+    if (typeof GOOGLE_SHEET_URL === "undefined" || !GOOGLE_SHEET_URL) {
+      throw new Error("GOOGLE_SHEET_URL no está definida.");
+    }
+
+    const res = await fetch(GOOGLE_SHEET_URL);
+    if (!res.ok) throw new Error(`Error HTTP: ${res.status}`);
+    
+    const data = await res.json();
+    
+    // Guardar productos globalmente si tenés la variable definida
+    if (typeof allProducts !== "undefined") {
+      allProducts = data;
+    }
+
+    // Renderizar productos en pantalla
+    if (typeof renderProducts === "function") {
+      renderProducts(data);
+    } else {
+      console.error("La función renderProducts no está definida.");
+    }
+  } catch (err) {
+    console.error("Error al cargar productos:", err);
+    container.innerHTML = "<p class='error-text'>Error al cargar el catálogo. Intenta recargar la página.</p>";
+  }
 }
+
+// =========================================================
+// DÓLAR BLUE API E INICIALIZACIÓN GLOBAL
+// =========================================================
 
 async function fetchDolarBlue() {
   try {
@@ -462,6 +495,8 @@ async function fetchDolarBlue() {
   }
 }
 
+// Inicialización cuando el documento está listo
 document.addEventListener("DOMContentLoaded", () => {
+  fetchProductsFromSheet();
   fetchDolarBlue();
 });
