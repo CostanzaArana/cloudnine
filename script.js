@@ -5,21 +5,17 @@
 const backdrop = document.getElementById("backdrop");
 
 function toggleBodyScroll(disable) {
-  // Dejamos la función sin bloquear para permitir el scroll siempre
   document.body.style.overflow = "";
 }
 
 function openBackdrop() {
   if (backdrop) backdrop.classList.add("active");
-  // Ya no llamamos a toggleBodyScroll(true)
 }
 
 function closeBackdrop() {
   if (backdrop) backdrop.classList.remove("active");
-  // Ya no llamamos a toggleBodyScroll(false)
 }
 
-// Cierre global al tocar/cliquear en el fondo oscuro
 if (backdrop) {
   backdrop.addEventListener("click", () => {
     closeMenu();
@@ -92,7 +88,7 @@ function showToast(message) {
   }, 2500);
 }
 
-// URL generada en el paso 1 por Google Apps Script
+// URL de Google Apps Script
 const GOOGLE_SHEET_URL =
   "https://script.google.com/macros/s/AKfycbwgOFv5CTOK2MQmwbL17LUnCRfGr3A1-G5aPvo3JE9-f7_iHzyJDxuVe8B5MnCldKh2aw/exec";
 
@@ -113,21 +109,18 @@ const fmtARS = (n) =>
 // CÁLCULO DEL PRECIO
 // ==========================
 
-// CÁLCULO DEL PRECIO
 function priceFor(usd) {
-  const numUsd = Number(usd) || 0; // Previene NaN
+  const numUsd = Number(usd) || 0;
   const rate = dolarBlueRate || FALLBACK_RATE;
   const precio = numUsd * rate * MARGIN;
   return Math.floor((precio + 100) / 500) * 500;
 }
 
 // ==========================
-// ESTADO DE CARGA DE PRODUCTOS
+// ESTADO DE CARGA DE PRODUCTOS (SKELETON)
 // ==========================
 
-// Función para mostrar el estado de carga con Skeleton Loaders
 function showSkeletonLoaders(count = 8) {
-  // Detectamos cuál es la grilla que está presente en la página actual
   const container = 
     document.getElementById("grid-destacados") || 
     document.getElementById("grid-descartables") || 
@@ -136,7 +129,6 @@ function showSkeletonLoaders(count = 8) {
     document.getElementById("grid-productos");
   if (!container) return;
 
-  // Generamos N tarjetas de skeleton completas
   const skeletonsHTML = Array.from({ length: count }, () => `
     <div class="skeleton-card">
       <div class="skeleton-img"></div>
@@ -151,16 +143,14 @@ function showSkeletonLoaders(count = 8) {
 }
 
 // ==========================
-// Mapear los datos que vienen desde Google Sheets
+// OBTENER PRODUCTOS DESDE GOOGLE SHEETS
 // ==========================
 
 async function fetchProductsFromSheet() {
-  // Si no tenemos productos cacheados, mostramos los Skeleton Loaders completos inmediatamente
   if (!localStorage.getItem("cloudnine_products")) {
     showSkeletonLoaders(8);
   }
 
-  // 1. Intentar cargar inmediatamente desde la memoria local si existen datos previas
   const cachedData = localStorage.getItem("cloudnine_products");
   if (cachedData) {
     PRODUCTS = JSON.parse(cachedData);
@@ -169,15 +159,13 @@ async function fetchProductsFromSheet() {
 
   try {
     const res = await fetch(GOOGLE_SHEET_URL);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const rawData = await res.json();
 
     const grouped = {};
 
     rawData.forEach((row) => {
-      // Clave única por producto
       const key = `${row.category}_${row.brand}_${row.name}`.toLowerCase();
-
-      // Evaluamos si esta fila específica está marcada como destacada
       const isRowFeatured =
         row.featured === true || String(row.featured).toUpperCase() === "TRUE";
 
@@ -195,19 +183,14 @@ async function fetchProductsFromSheet() {
           info: row.info ? String(row.info) : null,
           flavors: [],
         };
-      } else {
-        // SI EL PRODUCTO YA EXISTE: si esta nueva fila tiene featured = TRUE, actualizamos el producto
-        if (isRowFeatured) {
-          grouped[key].featured = true;
-        }
+      } else if (isRowFeatured) {
+        grouped[key].featured = true;
       }
 
-      // Agregar sabor a la lista de opciones
       if (row.flavor) {
         grouped[key].flavors.push({
           name: String(row.flavor).trim(),
           usd: Number(String(row.price_usd || 0).replace(",", ".")),
-          // NUEVO: Precio en promoción (si existe)
           promoUsd: row.promo_price_usd
             ? Number(String(row.promo_price_usd).replace(",", "."))
             : null,
@@ -218,8 +201,6 @@ async function fetchProductsFromSheet() {
       }
     });
 
-    // Convertimos el objeto agrupado a array y calculamos automáticamente
-    // si el producto general está agotado basándonos en los sabores
     PRODUCTS = Object.values(grouped).map((product) => {
       const isFullyOutOfStock =
         product.flavors.length > 0 &&
@@ -231,23 +212,107 @@ async function fetchProductsFromSheet() {
       };
     });
 
-    // 2. Guardar el nuevo resultado en la memoria local para futuras cargas
     localStorage.setItem("cloudnine_products", JSON.stringify(PRODUCTS));
 
-    // 3. Volver a renderizar solo para refrescar con datos super actualizados
     if (typeof renderProducts === "function") renderProducts();
   } catch (error) {
     console.error("Error al obtener los datos de Google Sheets:", error);
+    if (PRODUCTS.length === 0) {
+      showErrorState();
+    }
   }
 }
 
+function showErrorState() {
+  const container = 
+    document.getElementById("grid-destacados") || 
+    document.getElementById("grid-descartables") || 
+    document.getElementById("grid-recargables") || 
+    document.getElementById("grid-liquidos") || 
+    document.getElementById("grid-productos");
+    
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="error-load-container" style="grid-column: 1 / -1; text-align: center; padding: 3rem 1rem;">
+      <p style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-color, #333);">
+        No pudimos cargar el catálogo en este momento.
+      </p>
+      <button onclick="fetchProductsFromSheet()" class="card-cta" style="max-width: 200px; margin: 0 auto;">
+        Reintentar
+      </button>
+    </div>
+  `;
+}
+
 // ==========================
-// DETECTAR PÁGINA HOME
+// DETECTAR PÁGINA HOME Y OBTENER CATEGORÍA DE PÁGINA
 // ==========================
 
 function isHomePage() {
   const file = window.location.pathname.split("/").pop();
   return file === "" || file === "index.html" || file === "index";
+}
+
+function getPageCategory() {
+  const path = window.location.pathname;
+  if (path.includes("descartables")) return "descartables";
+  if (path.includes("recargables")) return "recargables";
+  if (path.includes("liquidos")) return "liquidos";
+  return null;
+}
+
+// ==========================
+// GENERADOR DINÁMICO DE FILTROS DE MARCAS
+// ==========================
+
+function generarFiltrosMarcas(products) {
+  const brandFiltersContainer = document.getElementById("brandFilters");
+  if (!brandFiltersContainer) return;
+
+  const pageCat = getPageCategory();
+  
+  // Filtrar marcas según la categoría de la página actual
+  const categoryProducts = pageCat 
+    ? products.filter(p => p.category === pageCat)
+    : products;
+
+  // Extraer marcas únicas
+  const brandsSet = new Set();
+  categoryProducts.forEach(p => {
+    if (p.brand) brandsSet.add(p.brand.trim());
+  });
+
+  const uniqueBrands = Array.from(brandsSet).sort((a, b) => a.localeCompare(b));
+
+  // Renderizar los botones de las marcas
+  let buttonsHTML = `<button class="filter-btn ${marcaSeleccionada === 'all' ? 'active' : ''}" data-brand="all">Todas</button>`;
+  
+  uniqueBrands.forEach(brand => {
+    const isActive = marcaSeleccionada === brand;
+    buttonsHTML += `<button class="filter-btn ${isActive ? 'active' : ''}" data-brand="${brand}">${brand}</button>`;
+  });
+
+  brandFiltersContainer.innerHTML = buttonsHTML;
+
+  // Event listenerdelegado o individual
+  brandFiltersContainer.querySelectorAll(".filter-btn").forEach(btn => {
+    btn.addEventListener("click", () => {
+      brandFiltersContainer.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+
+      marcaSeleccionada = btn.dataset.brand;
+      if (marcaSeleccionada === "all") {
+        sessionStorage.removeItem("cloudnine_selected_brand");
+      } else {
+        sessionStorage.setItem("cloudnine_selected_brand", marcaSeleccionada);
+      }
+
+      const currentLiveSearch = document.getElementById("live-search-input");
+      const currentQuery = currentLiveSearch ? currentLiveSearch.value : (searchInput ? searchInput.value : "");
+      renderProducts(currentQuery);
+    });
+  });
 }
 
 // ==========================
@@ -258,14 +323,12 @@ function createProductCard(product) {
   const card = document.createElement("div");
   card.className = "card";
 
-  // 1. ORDENAMOS LOS SABORES: Disponibles primero, agotados al final
   const sortedFlavors = [...product.flavors].sort((a, b) => {
     const aOut = a.outOfStock || product.outOfStock ? 1 : 0;
     const bOut = b.outOfStock || product.outOfStock ? 1 : 0;
     return aOut - bOut;
   });
 
-  // 2. GENERAMOS LAS OPCIONES EN BASE A LA LISTA ORDENADA
   const flavorOptions = sortedFlavors
     .map((flavor) => {
       const isOut = flavor.outOfStock || product.outOfStock;
@@ -286,13 +349,10 @@ function createProductCard(product) {
 
   const imageSrc = product.image || "assets/placeholder.jpg";
 
-  // Verificamos si al menos un sabor tiene promoción para poner la etiqueta en la imagen
   const hasAnyPromo = product.flavors.some(
     (f) => f.promoUsd && f.promoUsd < f.usd,
   );
-  const badgeHTML = hasAnyPromo
-    ? `<span class="badge-promo">OFERTA</span>`
-    : "";
+  const badgeHTML = hasAnyPromo ? `<span class="badge-promo">OFERTA</span>` : "";
 
   card.innerHTML = `
     <div class="card-img">
@@ -324,87 +384,86 @@ function createProductCard(product) {
   }
 
   function updateState() {
-      const flavor = currentFlavor();
-      if (!flavor) return;
+    const flavor = currentFlavor();
+    if (!flavor) return;
 
-      // ⚡ Micro-interacción: Animación rápida al cambiar valor
-      priceEl.classList.add("price-updated");
-      setTimeout(() => {
-        priceEl.classList.remove("price-updated");
-      }, 150);
+    priceEl.classList.add("price-updated");
+    setTimeout(() => {
+      priceEl.classList.remove("price-updated");
+    }, 150);
 
-      const isOut = flavor.outOfStock || product.outOfStock;
+    const isOut = flavor.outOfStock || product.outOfStock;
 
-      if (isOut) {
-        card.classList.add("out-of-stock");
-        ctaEl.disabled = true;
-        ctaEl.textContent = "Sin Stock";
-        ctaEl.classList.add("disabled");
-        priceEl.textContent = ""; // Oculta el precio si está agotado
-      } else {
-        card.classList.remove("out-of-stock");
-        ctaEl.disabled = false;
-        ctaEl.textContent = "Agregar al carrito";
-        ctaEl.classList.remove("disabled");
-
-        const qty = Math.max(1, parseInt(qtyEl.value) || 1);
-        const activeUsd =
-          flavor.promoUsd && flavor.promoUsd < flavor.usd
-            ? flavor.promoUsd
-            : flavor.usd;
-
-        if (flavor.promoUsd && flavor.promoUsd < flavor.usd) {
-          const oldTotal = priceFor(flavor.usd) * qty;
-          const promoTotal = priceFor(flavor.promoUsd) * qty;
-
-          priceEl.innerHTML = `
-            <span class="old-price">${fmtARS(oldTotal)}</span>
-            <span class="promo-price">${fmtARS(promoTotal)}</span>
-          `;
-        } else {
-          const total = priceFor(activeUsd) * qty;
-          priceEl.textContent = fmtARS(total);
-        }
-      }
-    }
-
-    selectEl.addEventListener("change", updateState);
-    qtyEl.addEventListener("input", updateState);
-
-    ctaEl.addEventListener("click", () => {
-      const flavor = currentFlavor();
-      if (!flavor || flavor.outOfStock || product.outOfStock) return;
+    if (isOut) {
+      card.classList.add("out-of-stock");
+      ctaEl.disabled = true;
+      ctaEl.textContent = "Sin Stock";
+      ctaEl.classList.add("disabled");
+      priceEl.textContent = "";
+    } else {
+      card.classList.remove("out-of-stock");
+      ctaEl.disabled = false;
+      ctaEl.textContent = "Agregar al carrito";
+      ctaEl.classList.remove("disabled");
 
       const qty = Math.max(1, parseInt(qtyEl.value) || 1);
-
-      const finalUsd =
+      const activeUsd =
         flavor.promoUsd && flavor.promoUsd < flavor.usd
           ? flavor.promoUsd
           : flavor.usd;
 
-      addToCart({
-        brand: product.brand,
-        name: product.name,
-        flavor: flavor.name,
-        usd: finalUsd,
-        qty,
-      });
-      const originalText = ctaEl.textContent;
-      ctaEl.textContent = "¡Agregado! ✓";
-      ctaEl.classList.add("added");
-      ctaEl.disabled = true; // Previene doble clic accidental en el microsegundo
+      if (flavor.promoUsd && flavor.promoUsd < flavor.usd) {
+        const oldTotal = priceFor(flavor.usd) * qty;
+        const promoTotal = priceFor(flavor.promoUsd) * qty;
 
-      setTimeout(() => {
-        ctaEl.textContent = originalText;
-        ctaEl.classList.remove("added");
-        ctaEl.disabled = false;
-      }, 1200);
-    });
-
-    updateState();
-
-    return card;
+        priceEl.innerHTML = `
+          <span class="old-price">${fmtARS(oldTotal)}</span>
+          <span class="promo-price">${fmtARS(promoTotal)}</span>
+        `;
+      } else {
+        const total = priceFor(activeUsd) * qty;
+        priceEl.textContent = fmtARS(total);
+      }
+    }
   }
+
+  selectEl.addEventListener("change", updateState);
+  qtyEl.addEventListener("input", updateState);
+
+  ctaEl.addEventListener("click", () => {
+    const flavor = currentFlavor();
+    if (!flavor || flavor.outOfStock || product.outOfStock) return;
+
+    const qty = Math.max(1, parseInt(qtyEl.value) || 1);
+
+    const finalUsd =
+      flavor.promoUsd && flavor.promoUsd < flavor.usd
+        ? flavor.promoUsd
+        : flavor.usd;
+
+    addToCart({
+      brand: product.brand,
+      name: product.name,
+      flavor: flavor.name,
+      usd: finalUsd,
+      qty,
+    });
+    const originalText = ctaEl.textContent;
+    ctaEl.textContent = "¡Agregado! ✓";
+    ctaEl.classList.add("added");
+    ctaEl.disabled = true;
+
+    setTimeout(() => {
+      ctaEl.textContent = originalText;
+      ctaEl.classList.remove("added");
+      ctaEl.disabled = false;
+    }, 1200);
+  });
+
+  updateState();
+
+  return card;
+}
 
 // ==========================
 // RENDERIZAR PRODUCTOS
@@ -455,7 +514,6 @@ function renderProducts(searchTerm = "") {
   });
 
   buildNavigationMenu(fullGrouped);
-  // Generar los botones de marcas según los productos cargados
   generarFiltrosMarcas(PRODUCTS);
 
   if (home && query === "") {
@@ -488,7 +546,6 @@ function renderProducts(searchTerm = "") {
   const filteredGrouped = {};
 
   PRODUCTS.forEach((product) => {
-    // NUEVO: Filtro por marca seleccionada
     if (marcaSeleccionada !== "all" && product.brand !== marcaSeleccionada) {
       return;
     }
@@ -535,10 +592,10 @@ function renderProducts(searchTerm = "") {
       Object.keys(filteredGrouped[category]).length === 0
     ) {
       if (
-        (query !== "" || activePuffFilter !== "all") &&
+        (query !== "" || activePuffFilter !== "all" || marcaSeleccionada !== "all") &&
         container.innerHTML === ""
       ) {
-        container.innerHTML = `<p class="no-results">No se encontraron productos con estos filtros.</p>`;
+        container.innerHTML = `<p class="no-results" style="grid-column: 1 / -1; text-align: center; padding: 2rem; opacity: 0.8;">No se encontraron productos con estos filtros.</p>`;
       }
       return;
     }
@@ -600,7 +657,181 @@ function handleInitialHashScroll() {
 }
 
 // ==========================
-// MANEJO DE BUSCADOR Y LUPA
+// SCROLL REVEAL (ANIMACIÓN)
+// ==========================
+
+function initScrollReveal() {
+  const cards = document.querySelectorAll(".card:not(.reveal-init)");
+  if (!cards.length) return;
+
+  if ("IntersectionObserver" in window) {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("reveal-visible");
+            observer.unobserve(entry.target);
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    cards.forEach((card) => {
+      card.classList.add("reveal-init");
+      observer.observe(card);
+    });
+  } else {
+    cards.forEach((card) => card.classList.add("reveal-visible"));
+  }
+}
+
+// ==========================
+// BOTÓN SCROLL TOP (VOLVER ARRIBA)
+// ==========================
+
+const scrollTopBtn = document.getElementById("scrollTopBtn");
+
+if (scrollTopBtn) {
+  window.addEventListener("scroll", () => {
+    if (window.scrollY > 300) {
+      scrollTopBtn.classList.add("show");
+    } else {
+      scrollTopBtn.classList.remove("show");
+    }
+  });
+
+  scrollTopBtn.addEventListener("click", () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  });
+}
+
+// ==========================
+// BUSCADOR EN TIEMPO REAL (LIVE SEARCH & SUGGESTIONS)
+// ==========================
+
+const liveSearchInput = document.getElementById("live-search-input");
+const clearSearchBtn = document.getElementById("clear-search-btn");
+const searchDropdown = document.getElementById("search-results-dropdown");
+
+function initLiveSearch() {
+  if (!liveSearchInput) return;
+
+  liveSearchInput.addEventListener("input", (e) => {
+    const val = e.target.value.trim();
+
+    if (clearSearchBtn) {
+      clearSearchBtn.style.display = val.length > 0 ? "block" : "none";
+    }
+
+    if (val.length === 0) {
+      if (searchDropdown) searchDropdown.classList.add("hidden");
+      renderProducts("");
+      return;
+    }
+
+    renderProducts(val);
+    showSearchSuggestions(val);
+  });
+
+  if (clearSearchBtn) {
+    clearSearchBtn.addEventListener("click", () => {
+      liveSearchInput.value = "";
+      clearSearchBtn.style.display = "none";
+      if (searchDropdown) searchDropdown.classList.add("hidden");
+      renderProducts("");
+    });
+  }
+
+  // Cerrar el dropdown al hacer clic fuera
+  document.addEventListener("click", (e) => {
+    if (
+      searchDropdown &&
+      !searchDropdown.contains(e.target) &&
+      e.target !== liveSearchInput
+    ) {
+      searchDropdown.classList.add("hidden");
+    }
+  });
+}
+
+function showSearchSuggestions(query) {
+  if (!searchDropdown) return;
+
+  const q = query.toLowerCase();
+  const pageCat = getPageCategory();
+
+  // Filtrar productos por la página actual si estamos en una categoría concreta
+  const availableProducts = pageCat
+    ? PRODUCTS.filter((p) => p.category === pageCat)
+    : PRODUCTS;
+
+  const matches = [];
+
+  availableProducts.forEach((product) => {
+    const brandMatch = product.brand.toLowerCase().includes(q);
+    const nameMatch = product.name.toLowerCase().includes(q);
+    const matchingFlavors = product.flavors.filter((f) =>
+      f.name.toLowerCase().includes(q)
+    );
+
+    if (brandMatch || nameMatch || matchingFlavors.length > 0) {
+      matches.push({
+        product,
+        matchingFlavors: matchingFlavors.map((f) => f.name),
+      });
+    }
+  });
+
+  if (matches.length === 0) {
+    searchDropdown.innerHTML = `<div class="search-no-results">No se encontraron sugerencias</div>`;
+    searchDropdown.classList.remove("hidden");
+    return;
+  }
+
+  const limit = matches.slice(0, 5);
+
+  const html = limit
+    .map(({ product, matchingFlavors }) => {
+      const flavorSub =
+        matchingFlavors.length > 0
+          ? `<span class="suggestion-flavor">Sabores: ${matchingFlavors.slice(0, 2).join(", ")}</span>`
+          : "";
+
+      return `
+      <div class="search-suggestion-item" data-brand="${product.brand}" data-name="${product.name}">
+        <img src="${product.image || "assets/placeholder.jpg"}" alt="${product.name}" class="suggestion-img">
+        <div class="suggestion-info">
+          <span class="suggestion-title">${product.brand} - ${product.name}</span>
+          ${flavorSub}
+        </div>
+      </div>
+    `;
+    })
+    .join("");
+
+  searchDropdown.innerHTML = html;
+  searchDropdown.classList.remove("hidden");
+
+  // Event listener al seleccionar una sugerencia
+  searchDropdown.querySelectorAll(".search-suggestion-item").forEach((item) => {
+    item.addEventListener("click", () => {
+      const brand = item.dataset.brand;
+      const name = item.dataset.name;
+      liveSearchInput.value = `${brand} ${name}`;
+      searchDropdown.classList.add("hidden");
+      renderProducts(`${brand} ${name}`);
+    });
+  });
+}
+
+initLiveSearch();
+
+// ==========================
+// MANEJO DE BUSCADOR FLOTANTE (PÁGINAS LEGACY / HEADER)
 // ==========================
 
 const searchToggle = document.getElementById("searchToggle");
@@ -655,14 +886,14 @@ if (puffFiltersContainer) {
       btn.classList.add("active");
 
       activePuffFilter = btn.dataset.range;
-      const currentQuery = searchInput ? searchInput.value : "";
+      const currentLiveSearch = document.getElementById("live-search-input");
+      const currentQuery = currentLiveSearch ? currentLiveSearch.value : (searchInput ? searchInput.value : "");
       renderProducts(currentQuery);
     });
   });
 }
 
 function ordenarProductos(orden, btnElement) {
-  // 1. Guardar o remover la preferencia en la sesión
   ordenPrecioSeleccionado = orden;
   if (orden) {
     sessionStorage.setItem("cloudnine_price_sort", orden);
@@ -670,7 +901,6 @@ function ordenarProductos(orden, btnElement) {
     sessionStorage.removeItem("cloudnine_price_sort");
   }
 
-  // 2. Estilos visuales de los botones de precio
   document
     .querySelectorAll(".sort-btn")
     .forEach((btn) => btn.classList.remove("active"));
@@ -678,7 +908,6 @@ function ordenarProductos(orden, btnElement) {
     btnElement.classList.add("active");
   }
 
-  // 3. Buscamos todas las grillas individuales de cada marca (.grid)
   const grids = document.querySelectorAll(".grid");
 
   grids.forEach((grid) => {
@@ -688,7 +917,6 @@ function ordenarProductos(orden, btnElement) {
 
     if (cards.length <= 1) return;
 
-    // 4. Ordenamos las tarjetas considerando disponibilidad y precio
     cards.sort((a, b) => {
       const sinStockA =
         a.classList.contains("out-of-stock") ||
@@ -717,7 +945,6 @@ function ordenarProductos(orden, btnElement) {
   });
 }
 
-// Función auxiliar para re-aplicar el orden guardado automáticamente al renderizar
 function restaurarOrdenPrecio() {
   if (!ordenPrecioSeleccionado) return;
   const btnActive = document.querySelector(`.sort-btn[onclick*="'${ordenPrecioSeleccionado}'"]`);
@@ -725,16 +952,13 @@ function restaurarOrdenPrecio() {
 }
 
 function limpiarFiltros() {
-  // 1. Borrar storage de sesión
   sessionStorage.removeItem("cloudnine_selected_brand");
   sessionStorage.removeItem("cloudnine_price_sort");
 
-  // 2. Resetear variables globales
   marcaSeleccionada = "all";
   activePuffFilter = "all";
   ordenPrecioSeleccionado = null;
 
-  // 3. Resetear selección visual de botones de marcas a "Todas"
   const brandButtons = document.querySelectorAll('#brandFilters .filter-btn');
   brandButtons.forEach(btn => {
     if (btn.dataset.brand === 'all') {
@@ -744,7 +968,6 @@ function limpiarFiltros() {
     }
   });
 
-  // 4. Resetear selección visual de botones de puffs a "Todos"
   const puffButtons = document.querySelectorAll('#puffFilters .filter-btn');
   puffButtons.forEach(btn => {
     if (btn.dataset.range === 'all') {
@@ -754,11 +977,9 @@ function limpiarFiltros() {
     }
   });
 
-  // 5. Desmarcar botones de ordenamiento por precio
   const sortButtons = document.querySelectorAll('.sort-btn');
   sortButtons.forEach(btn => btn.classList.remove('active'));
 
-  // 6. Limpiar campos de búsqueda
   const liveSearch = document.getElementById('live-search-input');
   if (liveSearch) liveSearch.value = '';
 
@@ -770,40 +991,51 @@ function limpiarFiltros() {
   const clearBtn = document.getElementById('clear-search-btn');
   if (clearBtn) clearBtn.style.display = 'none';
 
-  // 7. Volver a renderizar el catálogo completo
   renderProducts();
 }
-
 
 // ==========================================
 // VERIFICACIÓN DE MAYORÍA DE EDAD (+18)
 // ==========================================
 document.addEventListener("DOMContentLoaded", () => {
   const ageModal = document.getElementById("ageModal");
+  const backdrop = document.getElementById("backdrop");
   const btnYes = document.getElementById("btnAgeYes");
   const btnNo = document.getElementById("btnAgeNo");
+  const ageWarningText = document.getElementById("ageWarningText");
 
-  // Si ya verificó edad anteriormente, ocultamos el modal inmediatamente
   if (localStorage.getItem("ageVerified") === "true") {
     if (ageModal) ageModal.style.display = "none";
+    if (backdrop) backdrop.style.display = "none";
   } else {
     if (ageModal) ageModal.classList.add("show");
+    if (backdrop) backdrop.classList.add("show");
   }
 
   if (btnYes) {
     btnYes.addEventListener("click", () => {
       localStorage.setItem("ageVerified", "true");
-      ageModal.classList.remove("show");
+      
+      if (ageModal) ageModal.classList.remove("show");
+      if (backdrop) backdrop.classList.remove("show");
+
       setTimeout(() => {
-        ageModal.style.display = "none";
+        if (ageModal) ageModal.style.display = "none";
+        if (backdrop) backdrop.style.display = "none";
       }, 300);
     });
   }
 
   if (btnNo) {
     btnNo.addEventListener("click", () => {
-      alert("Debes ser mayor de 18 años para ingresar a esta tienda.");
-      window.location.href = "https://www.google.com";
+      if (ageWarningText) ageWarningText.style.display = "block";
+      
+      btnYes.disabled = true;
+      btnNo.disabled = true;
+
+      setTimeout(() => {
+        window.location.href = "https://www.google.com";
+      }, 2000);
     });
   }
 });
@@ -887,7 +1119,7 @@ function addToCart(item) {
   const cartIcon = document.getElementById("cartToggle") || document.getElementById("cartCount");
   if (cartIcon) {
     cartIcon.classList.remove("cart-icon-pulse");
-    void cartIcon.offsetWidth; // Trigger reflow para reiniciar la animación CSS si clickean rápido
+    void cartIcon.offsetWidth;
     cartIcon.classList.add("cart-icon-pulse");
   }
 }
@@ -1042,7 +1274,7 @@ if (cartClose) {
 }
 
 // ==========================
-// PERSISTENCIA Y CHECKOUT POR WHATSAPP
+// PERSISTENCIA Y CHECKOUT POR WHATSAPP / MERCADO PAGO
 // ==========================
 
 const deliverySelect = document.getElementById("deliveryMethod");
@@ -1051,6 +1283,7 @@ const townGroup = document.getElementById("townGroup");
 const townSelect = document.getElementById("clientTown");
 const customTownGroup = document.getElementById("customTownGroup");
 const cartCheckout = document.getElementById("cartCheckout");
+const btnMercadoPago = document.getElementById("btnMercadoPago");
 
 const CHECKOUT_STORAGE_KEY = "cloudnine_checkout_data";
 
@@ -1138,531 +1371,230 @@ if (townSelect) {
 restoreCheckoutData();
 
 // ==========================
-// CHECKOUT: WHATSAPP Y MERCADO PAGO
+// REGISTRO DE PEDIDOS EN GOOGLE SHEETS
 // ==========================
 
-// 1. Función para procesar pago con Mercado Pago
-async function pagarConMercadoPago() {
+function registrarPedidoEnSheet(pedidoPayload) {
+  fetch(GOOGLE_SHEET_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(pedidoPayload),
+  }).catch((err) => console.error("Error al registrar pedido en Sheet:", err));
+}
+
+// ==========================
+// PROCESAMIENTO DE PEDIDOS (WHATSAPP & MERCADO PAGO)
+// ==========================
+
+function obtenerDatosFormularioYValidar() {
   const cart = getCart();
-  if (cart.length === 0) {
-    showToast("Tu carrito está vacío");
-    return;
+  if (!cart.length) {
+    showToast("El carrito está vacío.");
+    return null;
   }
 
-  const nameInput = document.getElementById("clientName");
-  const addressInput = document.getElementById("clientAddress");
-  const customTownInput = document.getElementById("clientCustomTown");
+  const clientName = document.getElementById("clientName")?.value.trim();
+  const method = deliverySelect?.value || "retiro";
+  const address = document.getElementById("clientAddress")?.value.trim();
+  const town = townSelect?.value;
+  const customTown = document.getElementById("clientCustomTown")?.value.trim();
 
-  const name = nameInput ? nameInput.value.trim() : "";
-  const method = deliverySelect ? deliverySelect.value : "retiro";
-  const address = addressInput ? addressInput.value.trim() : "";
-
-  let town = townSelect ? townSelect.value : "";
-  if (town === "Otro" && customTownInput) {
-    town = customTownInput.value.trim();
-  }
-
-  if (!name) {
-    showToast("Por favor, ingresá tu nombre");
-    if (nameInput) nameInput.focus();
-    return;
+  if (!clientName) {
+    showToast("Por favor, ingresá tu Nombre y Apellido.");
+    document.getElementById("clientName")?.focus();
+    return null;
   }
 
   if (method !== "retiro" && !address) {
-    showToast("Por favor, ingresá tu dirección");
-    if (addressInput) addressInput.focus();
-    return;
+    showToast("Por favor, ingresá la dirección de envío.");
+    document.getElementById("clientAddress")?.focus();
+    return null;
   }
 
-  if (method === "alrededores" && !town) {
-    showToast("Por favor, especificá tu localidad");
-    if (customTownInput && townSelect && townSelect.value === "Otro")
-      customTownInput.focus();
-    return;
-  }
-
-  const itemsMP = cart.map((item) => ({
-    title: `${item.brand ? item.brand + " " : ""}${item.name} (${item.flavor})`,
-    quantity: item.qty,
-    unit_price: priceFor(item.usd),
-    currency_id: "ARS",
-  }));
-
+  let finalTown = "";
   if (method === "alrededores") {
-    itemsMP.push({
-      title: "Costo de Envío (Alrededores)",
-      quantity: 1,
-      unit_price: 5000,
-      currency_id: "ARS",
-    });
-  }
-
-  showToast("Generando link de pago...");
-
-  try {
-    const respuesta = await fetch(WORKER_MP_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items: itemsMP,
-        payer: { name: name, address: address, town: town },
-      }),
-    });
-
-    const data = await respuesta.json();
-
-    if (data.init_point) {
-      window.location.href = data.init_point;
+    if (town === "Otro") {
+      if (!customTown) {
+        showToast("Por favor, especifica el nombre de la localidad.");
+        document.getElementById("clientCustomTown")?.focus();
+        return null;
+      }
+      finalTown = customTown;
     } else {
-      showToast("Error al conectar con Mercado Pago");
+      finalTown = town;
     }
-  } catch (error) {
-    console.error("Error al procesar pago:", error);
-    showToast("No se pudo iniciar el pago");
   }
+
+  let shippingCost = 0;
+  let deliveryText = "Retiro en persona";
+
+  if (method === "alta-gracia") {
+    deliveryText = `Envío en Alta Gracia (Gratis) - Dirección: ${address}`;
+  } else if (method === "alrededores") {
+    shippingCost = 5000;
+    deliveryText = `Envío a alrededores ($5.000) - Localidad: ${finalTown} - Dirección: ${address}`;
+  }
+
+  let subtotal = 0;
+  const itemsText = cart
+    .map((item) => {
+      const lineTotal = priceFor(item.usd) * item.qty;
+      subtotal += lineTotal;
+      const title = item.brand ? `${item.brand} ${item.name}` : item.name;
+      return `• ${title} (${item.flavor}) x${item.qty} - ${fmtARS(lineTotal)}`;
+    })
+    .join("\n");
+
+  const total = subtotal + shippingCost;
+
+  return {
+    cart,
+    clientName,
+    method,
+    address,
+    finalTown,
+    shippingCost,
+    deliveryText,
+    subtotal,
+    total,
+    itemsText,
+  };
 }
 
-// 2. Evento para el botón de Mercado Pago
-const btnMP = document.getElementById("btnMercadoPago");
-if (btnMP) {
-  btnMP.addEventListener("click", pagarConMercadoPago);
-}
-
-// 3. Evento para el botón de WhatsApp (Mantiene tu código original)
+// CHECKOUT VIA WHATSAPP
 if (cartCheckout) {
   cartCheckout.addEventListener("click", () => {
-    const cart = getCart();
-    if (cart.length === 0) {
-      showToast("Tu carrito está vacío");
-      return;
+    const data = obtenerDatosFormularioYValidar();
+    if (!data) return;
+
+    let msg = `*Nuevo pedido - Cloud Nine Store*\n\n`;
+    msg += `*Cliente:* ${data.clientName}\n`;
+    msg += `*Método de entrega:* ${data.deliveryText}\n\n`;
+    msg += `*Productos:*\n${data.itemsText}\n\n`;
+    if (data.shippingCost > 0) {
+      msg += `*Costo de envío:* ${fmtARS(data.shippingCost)}\n`;
     }
+    msg += `*Total a pagar:* ${fmtARS(data.total)}`;
 
-    const nameInput = document.getElementById("clientName");
-    const addressInput = document.getElementById("clientAddress");
-    const customTownInput = document.getElementById("clientCustomTown");
-
-    const name = nameInput ? nameInput.value.trim() : "";
-    const method = deliverySelect ? deliverySelect.value : "retiro";
-    const address = addressInput ? addressInput.value.trim() : "";
-
-    let town = townSelect ? townSelect.value : "";
-    if (town === "Otro" && customTownInput) {
-      town = customTownInput.value.trim();
-    }
-
-    if (!name) {
-      showToast("Por favor, ingresá tu nombre");
-      if (nameInput) nameInput.focus();
-      return;
-    }
-
-    if (method !== "retiro" && !address) {
-      showToast("Por favor, ingresá tu dirección");
-      if (addressInput) addressInput.focus();
-      return;
-    }
-
-    if (method === "alrededores" && !town) {
-      showToast("Por favor, especificá tu localidad");
-      if (customTownInput && townSelect && townSelect.value === "Otro")
-        customTownInput.focus();
-      return;
-    }
-
-    let msg = `🛒 *NUEVO PEDIDO - CLOUD NINE*\n\n`;
-    msg += `👤 *Cliente:* ${name}\n`;
-
-    let shippingCost = 0;
-
-    if (method === "retiro") {
-      msg += `📍 *Entrega:* Retiro en persona\n`;
-    } else if (method === "alta-gracia") {
-      msg += `🛵 *Entrega:* Envío en Alta Gracia (GRATIS)\n`;
-      msg += `📍 *Dirección:* ${address}\n`;
-    } else if (method === "alrededores") {
-      shippingCost = 5000;
-      msg += `🛵 *Entrega:* Envío a Alrededores ($5.000)\n`;
-      msg += `🏡 *Localidad:* ${town}\n`;
-      msg += `📍 *Dirección:* ${address}\n`;
-    }
-
-    msg += `\n📦 *Detalle del pedido:*\n`;
-
-    cart.forEach((item) => {
-      msg += `• ${item.brand ? item.brand + " " : ""}${item.name}${item.flavor ? " (" + item.flavor + ")" : ""} × ${item.qty}\n`;
+    // Registrar en Google Sheet
+    registrarPedidoEnSheet({
+      fecha: new Date().toISOString(),
+      cliente: data.clientName,
+      metodo: data.method,
+      direccion: data.address,
+      localidad: data.finalTown,
+      total: data.total,
+      productos: data.itemsText,
+      pago: "WhatsApp",
     });
 
-    const subtotal = cart.reduce(
-      (sum, item) => sum + priceFor(item.usd) * item.qty,
-      0,
-    );
-    const total = subtotal + shippingCost;
+    const url = `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`;
+    window.open(url, "_blank");
+  });
+}
 
-    if (shippingCost > 0) {
-      msg += `\n💰 *Subtotal:* ${fmtARS(subtotal)}`;
-      msg += `\n🚚 *Envío:* $5.000`;
-      msg += `\n💳 *Total final:* ${fmtARS(total)}`;
-    } else {
-      msg += `\n💳 *Total:* ${fmtARS(total)}`;
+// CHECKOUT VIA MERCADO PAGO
+if (btnMercadoPago) {
+  btnMercadoPago.addEventListener("click", async () => {
+    const data = obtenerDatosFormularioYValidar();
+    if (!data) return;
+
+    btnMercadoPago.disabled = true;
+    btnMercadoPago.textContent = "Cargando pago...";
+
+    try {
+      const mpItems = data.cart.map((item) => {
+        const unitPrice = priceFor(item.usd);
+        const title = item.brand ? `${item.brand} ${item.name}` : item.name;
+        return {
+          title: `${title} (${item.flavor})`,
+          quantity: item.qty,
+          unit_price: unitPrice,
+          currency_id: "ARS",
+        };
+      });
+
+      if (data.shippingCost > 0) {
+        mpItems.push({
+          title: "Costo de Envío a Alrededores",
+          quantity: 1,
+          unit_price: data.shippingCost,
+          currency_id: "ARS",
+        });
+      }
+
+      const res = await fetch(WORKER_MP_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          items: mpItems,
+          payer: {
+            name: data.clientName,
+          },
+        }),
+      });
+
+      if (!res.ok) throw new Error("Error en el servidor de pagos");
+
+      const responseData = await res.json();
+
+      if (responseData.init_point) {
+        registrarPedidoEnSheet({
+          fecha: new Date().toISOString(),
+          cliente: data.clientName,
+          metodo: data.method,
+          direccion: data.address,
+          localidad: data.finalTown,
+          total: data.total,
+          productos: data.itemsText,
+          pago: "Mercado Pago (Pendiente)",
+        });
+
+        window.location.href = responseData.init_point;
+      } else {
+        throw new Error("No se pudo obtener el link de pago.");
+      }
+    } catch (err) {
+      console.error(err);
+      showToast("Hubo un error al procesar el pago con Mercado Pago.");
+      btnMercadoPago.disabled = false;
+      btnMercadoPago.textContent = "💳 Pagar con Mercado Pago";
     }
-
-    const cleanPhone = String(WHATSAPP_NUMBER).replace(/[^0-9]/g, "");
-    const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
-
-    window.open(whatsappUrl, "_blank");
-
-    localStorage.removeItem("cloudnine_cart");
-    localStorage.removeItem(CHECKOUT_STORAGE_KEY);
-
-    if (nameInput) nameInput.value = "";
-    if (addressInput) addressInput.value = "";
-    if (customTownInput) customTownInput.value = "";
-
-    if (typeof renderCartBadge === "function") renderCartBadge();
-    if (typeof renderCartPanel === "function") renderCartPanel();
-
-    closeCart();
   });
 }
 
 // ==========================
-// DÓLAR BLUE E INICIALIZACIÓN
+// INICIALIZACIÓN
 // ==========================
 
-document.addEventListener("DOMContentLoaded", async () => {
-  // 1. Cargar la cotización guardada si existe
-  const savedRate = localStorage.getItem("cloudnine_dolar_rate");
-  dolarBlueRate = savedRate ? Number(savedRate) : FALLBACK_RATE;
+fetchProductsFromSheet();
 
-  // 2. Intentar actualizar el valor del Dólar Blue en tiempo real
+// ==========================
+// DÓLAR BLUE API
+// ==========================
+
+async function fetchDolarBlue() {
   try {
     const res = await fetch("https://dolarapi.com/v1/dolares/blue");
-    if (res.ok) {
-      const data = await res.json();
-      const liveRate = Number(data.venta);
-      if (liveRate) {
-        dolarBlueRate = liveRate;
-        localStorage.setItem("cloudnine_dolar_rate", String(dolarBlueRate));
-      }
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+    const data = await res.json();
+    
+    if (data && data.venta) {
+      dolarBlueRate = data.venta;
+      if (typeof renderProducts === "function") renderProducts();
+      if (typeof renderCartPanel === "function") renderCartPanel();
     }
-  } catch (e) {
-    console.warn(
-      "No se pudo obtener la cotización del dólar blue, usando respaldo.",
-    );
+  } catch (error) {
+    console.error("Error al obtener la cotización del dólar blue:", error);
   }
-
-  // 3. Descargar productos desde la planilla de Google Sheets
-  await fetchProductsFromSheet();
-
-  // 4. Renderizar vista y carrito con datos actualizados
-  renderProducts();
-  renderCartPanel();
-  renderCartBadge();
-});
-
-// ==========================
-// FILTRO POR MARCAS Y RANGOS
-// ==========================
-
-function generarFiltrosMarcas(productos) {
-  const brandContainer = document.getElementById("brandFilters");
-  if (!brandContainer) return;
-
-  // Detectar categoría actual de la página
-  const currentPage = window.location.pathname
-    .split("/")
-    .pop()
-    .replace(".html", "");
-
-  // Filtrar productos por la categoría activa si aplica
-  const productosCategoria = [
-    "descartables",
-    "recargables",
-    "liquidos",
-  ].includes(currentPage)
-    ? productos.filter((p) => p.category === currentPage)
-    : productos;
-
-  // Extraer marcas únicas
-  const marcas = [
-    "all",
-    ...new Set(productosCategoria.map((p) => p.brand).filter(Boolean)),
-  ];
-
-  // Generar HTML de botones
-  brandContainer.innerHTML = marcas
-    .map(
-      (marca) => `
-    <button 
-      class="filter-btn ${marca === marcaSeleccionada ? "active" : ""}" 
-      data-brand="${marca}"
-      onclick="filtrarPorMarca('${marca}', this)">
-      ${marca === "all" ? "Todas" : marca}
-    </button>
-  `,
-    )
-    .join("");
 }
 
-function filtrarPorMarca(marca, boton) {
-  marcaSeleccionada = marca;
-  sessionStorage.setItem("cloudnine_selected_brand", marca);
-
-  // Marcar botón activo
-  const botones = document.querySelectorAll("#brandFilters .filter-btn");
-  botones.forEach((btn) => btn.classList.remove("active"));
-  if (boton) boton.classList.add("active");
-
-  // Volver a renderizar productos aplicando el filtro
-  const currentQuery = searchInput ? searchInput.value : "";
-  renderProducts(currentQuery);
-}
-
-
-// ==========================================
-// FUNCIONALIDAD: BOTÓN VOLVER ARRIBA
-// ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-  const scrollTopBtn = document.getElementById('scrollTopBtn');
-
-  if (!scrollTopBtn) return;
-
-  // Mostrar/Ocultar el botón según la posición del scroll
-  const handleScroll = () => {
-    if (window.scrollY > 300) {
-      scrollTopBtn.classList.add('visible');
-    } else {
-      scrollTopBtn.classList.remove('visible');
-    }
-  };
-
-  // Escuchar el evento de scroll (usando requestAnimationFrame para optimizar rendimiento)
-  let isTicking = false;
-  window.addEventListener('scroll', () => {
-    if (!isTicking) {
-      window.requestAnimationFrame(() => {
-        handleScroll();
-        isTicking = false;
-      });
-      isTicking = true;
-    }
-  });
-
-  // Evento al hacer clic en el botón
-  scrollTopBtn.addEventListener('click', () => {
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    });
-  });
+// Inicialización final de eventos al cargar el DOM
+document.addEventListener("DOMContentLoaded", () => {
+  fetchDolarBlue();
 });
-
-
-//////////////////////////
-/// BUSCADOR DE PRODUCTOS (GOOGLE SHEETS INTEGRADO CON SCROLL CENTRADO)
-/////////////////////////
-
-document.addEventListener('DOMContentLoaded', () => {
-  const searchInput = document.getElementById('live-search-input');
-  const clearBtn = document.getElementById('clear-search-btn');
-  const dropdown = document.getElementById('search-results-dropdown');
-
-  if (!searchInput) return;
-
-  // 1. Obtener el precio mínimo en ARS de un producto
-  function getProductStartingPrice(product) {
-    if (!product.flavors || product.flavors.length === 0) return 0;
-    
-    const availableFlavors = product.flavors.filter(f => !f.outOfStock && !product.outOfStock);
-    const listToUse = availableFlavors.length > 0 ? availableFlavors : product.flavors;
-
-    if (availableFlavors.length === 0) return 0;
-
-    const minUsd = Math.min(...availableFlavors.map(f => (f.promoUsd && f.promoUsd < f.usd) ? f.promoUsd : f.usd));
-    return priceFor(minUsd);
-  }
-
-  // 2. Manejo de la búsqueda en tiempo real
-  function handleSearch() {
-    const query = searchInput.value.trim().toLowerCase();
-
-    if (clearBtn) {
-      clearBtn.style.display = query.length > 0 ? 'block' : 'none';
-    }
-
-    if (query.length < 2) {
-      if (dropdown) {
-        dropdown.classList.add('hidden');
-        dropdown.innerHTML = '';
-      }
-      if (typeof renderProducts === 'function') renderProducts('');
-      return;
-    }
-
-    // Filtrar desde el array real PRODUCTS
-    const filtered = PRODUCTS.filter(product => {
-      const matchBrand = product.brand.toLowerCase().includes(query);
-      const matchName = product.name.toLowerCase().includes(query);
-      const matchFlavor = product.flavors.some(f => f.name.toLowerCase().includes(query));
-
-      return matchBrand || matchName || matchFlavor;
-    });
-
-    renderDropdown(filtered);
-
-    // Filtrar también las tarjetas visibles en la grilla
-    if (typeof renderProducts === 'function') {
-      renderProducts(query);
-    }
-  }
-
-  // 3. Renderizar items en el menú desplegable
-  function renderDropdown(items) {
-    if (!dropdown) return;
-
-    if (items.length === 0) {
-      dropdown.innerHTML = `<div class="search-no-results">No se encontraron productos</div>`;
-    } else {
-      dropdown.innerHTML = items.slice(0, 6).map(item => {
-        const brandSlug = item.brand.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-        const sectionId = `${item.category}-${brandSlug}`;
-        const priceFormatted = fmtARS(getProductStartingPrice(item));
-        const fullTitle = `${item.brand} ${item.name}`;
-        // 🟢 CALCULAMOS SI TIENE STOCK Y SU PRECIO
-        const startPrice = getProductStartingPrice(item);
-        const isOut = item.outOfStock || startPrice <= 0;
-
-        // 🟢 FORMATEAMOS LA ETIQUETA DEL PRECIO
-        const priceHTML = isOut
-          ? `<span class="out-of-stock-text">Sin stock</span>`
-          : fmtARS(startPrice);
-
-        return `
-          <a href="#${sectionId}" class="search-result-item ${isOut ? 'is-out-of-stock' : ''}" data-section="${sectionId}" data-name="${fullTitle.toLowerCase()}">
-            <img src="${item.image || 'assets/placeholder.jpg'}" alt="${fullTitle}" class="search-result-thumb" />
-            <div class="search-result-info">
-              <span class="search-result-title"><strong>${item.brand}</strong> ${item.name}</span>
-              <span class="search-result-price">${priceHTML}</span>
-            </div>
-          </a>
-        `;
-      }).join('');
-
-      // Evento al hacer clic en un item de las sugerencias
-      dropdown.querySelectorAll('.search-result-item').forEach(link => {
-        link.addEventListener('click', (e) => {
-          e.preventDefault();
-          const targetName = link.getAttribute('data-name');
-          const sectionId = link.getAttribute('data-section');
-
-          dropdown.classList.add('hidden');
-
-          // Buscar la tarjeta del producto exacto por su título (h3)
-          let targetCard = null;
-          const cards = document.querySelectorAll('.card');
-          
-          cards.forEach(card => {
-            const h3 = card.querySelector('h3');
-            if (h3) {
-              const cardTitle = h3.textContent.trim().toLowerCase();
-              if (cardTitle.includes(targetName) || targetName.includes(cardTitle)) {
-                targetCard = card;
-              }
-            }
-          });
-
-          // Si encuentra la tarjeta del modelo, desliza y lo CENTRA en la pantalla
-          if (targetCard) {
-            targetCard.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center'
-            });
-            
-            // Resaltar suavemente el producto seleccionado
-            targetCard.style.transition = 'outline 0.3s ease, transform 0.3s ease';
-            targetCard.style.transform = 'scale(1.03)';
-            setTimeout(() => {
-              targetCard.style.transform = 'scale(1)';
-            }, 600);
-          } else {
-            // Si no ubica la tarjeta exacta, desliza hasta el título de la marca/sección
-            const sectionEl = document.getElementById(sectionId);
-            if (sectionEl) {
-              sectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-          }
-        });
-      });
-    }
-    dropdown.classList.remove('hidden');
-  }
-
-// 4. Eventos de interacción
-  let searchTimeout;
-  searchInput.addEventListener('input', () => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(() => {
-      handleSearch();
-    }, 200); // Espera 200ms después de que la persona deja de escribir
-  });
-
-  if (clearBtn) {
-    clearBtn.addEventListener('click', () => {
-      searchInput.value = '';
-      handleSearch();
-      searchInput.focus();
-    });
-  }
-
-  document.addEventListener('click', (e) => {
-    if (dropdown && !searchInput.contains(e.target) && !dropdown.contains(e.target)) {
-      dropdown.classList.add('hidden');
-    }
-  });
-
-  searchInput.addEventListener('focus', () => {
-    if (searchInput.value.trim().length >= 2) {
-      handleSearch();
-    }
-  });
-});
-
-// ==========================================
-// SCROLL REVEAL (INTERSECTION OBSERVER)
-// ==========================================
-
-function initScrollReveal() {
-  // Comprobar soporte de IntersectionObserver
-  if (!('IntersectionObserver' in window)) {
-    return; // Si el navegador es antiguo, muestra las tarjetas normalmente
-  }
-
-  const observerOptions = {
-    root: null, // usa el viewport del navegador
-    rootMargin: '0px 0px -50px 0px', // se activa 50px antes de entrar completamente
-    threshold: 0.1
-  };
-
-  const revealObserver = new IntersectionObserver((entries, observer) => {
-    entries.forEach((entry) => {
-      if (entry.isIntersecting) {
-        // Agrega la clase 'visible' cuando la tarjeta entra en pantalla
-        entry.target.classList.add('visible');
-        // Deja de observar la tarjeta una vez animada (mejora de rendimiento)
-        observer.unobserve(entry.target);
-      }
-    });
-  }, observerOptions);
-
-  // Selecciona todas las tarjetas de la tienda
-  const cards = document.querySelectorAll('.card');
-  cards.forEach((card, index) => {
-    // Aplica la clase base para ocultar y animar
-    card.classList.add('card-reveal');
-    
-    // Opcional: Pequeño escalonamiento (stagger) para las tarjetas visibles de entrada
-    card.style.transitionDelay = `${(index % 4) * 0.08}s`;
-    
-    revealObserver.observe(card);
-  });
-}
