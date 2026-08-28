@@ -1,14 +1,3 @@
-
-//////////////////////////////
-// Limpiar parámetros de consulta de Mercado Pago para evitar bucles de redirección
-//////////////////////////////
-(function limpiarParamsMP() {
-  if (window.location.search.includes("preference_id") || window.location.search.includes("collection_id")) {
-    const urlLimpia = window.location.origin + window.location.pathname;
-    window.history.replaceState(null, "", urlLimpia);
-  }
-})();
-
 // ==========================
 // BACKDROP Y CONTROL DE SCROLL GLOBAL
 // ==========================
