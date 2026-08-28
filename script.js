@@ -1158,9 +1158,49 @@ function renderCartBadge() {
 }
 renderCartBadge();
 
-// ==========================
-// PANEL DEL CARRITO Y ENVÍOS
-// ==========================
+// =========================================================
+// 1. LIMPIEZA DE PARÁMETROS MP (Previene ERR_TOO_MANY_REDIRECTS)
+// =========================================================
+(function () {
+  try {
+    const search = window.location.search;
+    if (search && (search.includes("preference_id") || search.includes("collection_id"))) {
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+  } catch (e) {
+    console.error("Error al limpiar parámetros de la URL:", e);
+  }
+})();
+
+// =========================================================
+// 2. BACKDROP Y CONTROL DE SCROLL GLOBAL
+// =========================================================
+
+const backdrop = document.getElementById("backdrop");
+
+function toggleBodyScroll(disable) {
+  document.body.style.overflow = "";
+}
+
+function openBackdrop() {
+  if (backdrop) backdrop.classList.add("active");
+}
+
+function closeBackdrop() {
+  if (backdrop) backdrop.classList.remove("active");
+}
+
+if (backdrop) {
+  backdrop.addEventListener("click", () => {
+    if (typeof closeMenu === "function") closeMenu();
+    closeCart();
+  });
+}
+
+// =========================================================
+// 3. PANEL DEL CARRITO Y ENVÍOS
+// =========================================================
 
 function renderCartPanel() {
   const itemsEl = document.getElementById("cartItems");
@@ -1168,7 +1208,7 @@ function renderCartPanel() {
 
   if (!itemsEl || !totalEl) return;
 
-  const cart = getCart();
+  const cart = typeof getCart === "function" ? getCart() : [];
   itemsEl.innerHTML = "";
 
   let subtotal = 0;
@@ -1239,9 +1279,9 @@ function renderCartPanel() {
   }
 }
 
-// ==========================
-// ABRIR Y CERRAR CARRITO
-// ==========================
+// =========================================================
+// 4. ABRIR Y CERRAR CARRITO
+// =========================================================
 
 const cartToggle = document.getElementById("cartToggle");
 const cartPanel = document.getElementById("cartPanel");
@@ -1273,9 +1313,9 @@ if (cartClose) {
   cartClose.addEventListener("click", closeCart);
 }
 
-// ==========================
-// PERSISTENCIA Y CHECKOUT POR WHATSAPP / MERCADO PAGO
-// ==========================
+// =========================================================
+// 5. PERSISTENCIA Y CHECKOUT POR WHATSAPP / MERCADO PAGO
+// =========================================================
 
 const deliverySelect = document.getElementById("deliveryMethod");
 const addressGroup = document.getElementById("addressGroup");
@@ -1370,11 +1410,12 @@ if (townSelect) {
 
 restoreCheckoutData();
 
-// ==========================
-// REGISTRO DE PEDIDOS EN GOOGLE SHEETS
-// ==========================
+// =========================================================
+// 6. REGISTRO DE PEDIDOS EN GOOGLE SHEETS
+// =========================================================
 
 function registrarPedidoEnSheet(pedidoPayload) {
+  if (typeof GOOGLE_SHEET_URL === "undefined") return;
   fetch(GOOGLE_SHEET_URL, {
     method: "POST",
     mode: "no-cors",
@@ -1385,12 +1426,12 @@ function registrarPedidoEnSheet(pedidoPayload) {
   }).catch((err) => console.error("Error al registrar pedido en Sheet:", err));
 }
 
-// ==========================
-// PROCESAMIENTO DE PEDIDOS (WHATSAPP & MERCADO PAGO)
-// ==========================
+// =========================================================
+// 7. PROCESAMIENTO DE PEDIDOS (WHATSAPP & MERCADO PAGO)
+// =========================================================
 
 function obtenerDatosFormularioYValidar() {
-  const cart = getCart();
+  const cart = typeof getCart === "function" ? getCart() : [];
   if (!cart.length) {
     showToast("El carrito está vacío.");
     return null;
@@ -1568,24 +1609,24 @@ if (btnMercadoPago) {
   });
 }
 
-// ==========================
-// INICIALIZACIÓN
-// ==========================
+// =========================================================
+// 8. INICIALIZACIÓN Y DÓLAR BLUE API
+// =========================================================
 
-fetchProductsFromSheet();
-
-// ==========================
-// DÓLAR BLUE API
-// ==========================
+if (typeof fetchProductsFromSheet === "function") {
+  fetchProductsFromSheet();
+}
 
 async function fetchDolarBlue() {
   try {
     const res = await fetch("https://dolarapi.com/v1/dolares/blue");
     if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const data = await res.json();
-    
+
     if (data && data.venta) {
-      dolarBlueRate = data.venta;
+      if (typeof dolarBlueRate !== "undefined") {
+        dolarBlueRate = data.venta;
+      }
       if (typeof renderProducts === "function") renderProducts();
       if (typeof renderCartPanel === "function") renderCartPanel();
     }
@@ -1594,7 +1635,6 @@ async function fetchDolarBlue() {
   }
 }
 
-// Inicialización final de eventos al cargar el DOM
 document.addEventListener("DOMContentLoaded", () => {
   fetchDolarBlue();
 });
