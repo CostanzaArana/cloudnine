@@ -111,9 +111,11 @@ const fmtARS = (n) =>
 // CÁLCULO DEL PRECIO
 // ==========================
 
+// CÁLCULO DEL PRECIO
 function priceFor(usd) {
+  const numUsd = Number(usd) || 0; // Previene NaN
   const rate = dolarBlueRate || FALLBACK_RATE;
-  const precio = usd * rate * MARGIN;
+  const precio = numUsd * rate * MARGIN;
   return Math.floor((precio + 100) / 500) * 500;
 }
 
@@ -147,9 +149,7 @@ async function fetchProductsFromSheet() {
         grouped[key] = {
           brand: String(row.brand || "").trim(),
           name: String(row.name || "").trim(),
-          category: String(row.category || "")
-            .trim()
-            .toLowerCase(),
+          category: String(row.category || "").trim().toLowerCase(),
           image: row.image
             ? String(row.image).trim()
             : "assets/placeholder.jpg",
@@ -347,6 +347,16 @@ function createProductCard(product) {
       usd: finalUsd,
       qty,
     });
+    const originalText = ctaEl.textContent;
+    ctaEl.textContent = "¡Agregado! ✓";
+    ctaEl.classList.add("added");
+    ctaEl.disabled = true; // Previene doble clic accidental en el microsegundo
+
+    setTimeout(() => {
+      ctaEl.textContent = originalText;
+      ctaEl.classList.remove("added");
+      ctaEl.disabled = false;
+    }, 1200);
   });
 
   updateState();
@@ -660,6 +670,51 @@ function ordenarProductos(orden, btnElement) {
   });
 }
 
+function limpiarFiltros() {
+  // 1. Resetear variables de estado globales a "all"
+  marcaSeleccionada = "all";
+  activePuffFilter = "all";
+
+  // 2. Resetear selección visual de botones de marcas a "Todas"
+  const brandButtons = document.querySelectorAll('#brandFilters .filter-btn');
+  brandButtons.forEach(btn => {
+    if (btn.dataset.brand === 'all') {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // 3. Resetear selección visual de botones de puffs a "Todos"
+  const puffButtons = document.querySelectorAll('#puffFilters .filter-btn');
+  puffButtons.forEach(btn => {
+    if (btn.dataset.range === 'all') {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
+
+  // 4. Desmarcar botones de ordenamiento por precio
+  const sortButtons = document.querySelectorAll('.sort-btn');
+  sortButtons.forEach(btn => btn.classList.remove('active'));
+
+  // 5. Limpiar los campos de búsqueda (tanto el header como el buscador en vivo)
+  const liveSearch = document.getElementById('live-search-input');
+  if (liveSearch) liveSearch.value = '';
+
+  if (searchInput) searchInput.value = '';
+
+  const dropdown = document.getElementById('search-results-dropdown');
+  if (dropdown) dropdown.classList.add('hidden');
+
+  const clearBtn = document.getElementById('clear-search-btn');
+  if (clearBtn) clearBtn.style.display = 'none';
+
+  // 6. Volver a renderizar el catálogo completo invocando la función correcta
+  renderProducts();
+}
+
 // ==========================================
 // VERIFICACIÓN DE MAYORÍA DE EDAD (+18)
 // ==========================================
@@ -750,6 +805,7 @@ function getCart() {
 function saveCart(cart) {
   localStorage.setItem("cloudnine_cart", JSON.stringify(cart));
   renderCartBadge();
+  renderCartPanel();
 }
 
 function addToCart(item) {
@@ -765,10 +821,15 @@ function addToCart(item) {
   }
 
   saveCart(cart);
-  renderCartPanel();
 
   const itemTitle = item.brand ? `${item.brand} ${item.name}` : item.name;
   showToast(`¡Agregado! ${itemTitle} (${item.flavor})`);
+  const cartIcon = document.getElementById("cartToggle") || document.getElementById("cartCount");
+  if (cartIcon) {
+    cartIcon.classList.remove("cart-icon-pulse");
+    void cartIcon.offsetWidth; // Trigger reflow para reiniciar la animación CSS si clickean rápido
+    cartIcon.classList.add("cart-icon-pulse");
+  }
 }
 
 function updateCartQty(index, delta) {
@@ -782,14 +843,12 @@ function updateCartQty(index, delta) {
   }
 
   saveCart(cart);
-  renderCartPanel();
 }
 
 function removeFromCart(index) {
   const cart = getCart();
   cart.splice(index, 1);
   saveCart(cart);
-  renderCartPanel();
 }
 
 // ==========================
@@ -805,6 +864,7 @@ function renderCartBadge() {
     cartCount.textContent = totalQty;
   }
 }
+renderCartBadge();
 
 // ==========================
 // PANEL DEL CARRITO Y ENVÍOS
@@ -1296,3 +1356,202 @@ function filtrarPorMarca(marca, boton) {
   const currentQuery = searchInput ? searchInput.value : "";
   renderProducts(currentQuery);
 }
+
+
+// ==========================================
+// FUNCIONALIDAD: BOTÓN VOLVER ARRIBA
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+  const scrollTopBtn = document.getElementById('scrollTopBtn');
+
+  if (!scrollTopBtn) return;
+
+  // Mostrar/Ocultar el botón según la posición del scroll
+  const handleScroll = () => {
+    if (window.scrollY > 300) {
+      scrollTopBtn.classList.add('visible');
+    } else {
+      scrollTopBtn.classList.remove('visible');
+    }
+  };
+
+  // Escuchar el evento de scroll (usando requestAnimationFrame para optimizar rendimiento)
+  let isTicking = false;
+  window.addEventListener('scroll', () => {
+    if (!isTicking) {
+      window.requestAnimationFrame(() => {
+        handleScroll();
+        isTicking = false;
+      });
+      isTicking = true;
+    }
+  });
+
+  // Evento al hacer clic en el botón
+  scrollTopBtn.addEventListener('click', () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  });
+});
+
+
+//////////////////////////
+/// BUSCADOR DE PRODUCTOS (GOOGLE SHEETS INTEGRADO CON SCROLL CENTRADO)
+/////////////////////////
+
+document.addEventListener('DOMContentLoaded', () => {
+  const searchInput = document.getElementById('live-search-input');
+  const clearBtn = document.getElementById('clear-search-btn');
+  const dropdown = document.getElementById('search-results-dropdown');
+
+  if (!searchInput) return;
+
+  // 1. Obtener el precio mínimo en ARS de un producto
+  function getProductStartingPrice(product) {
+    if (!product.flavors || product.flavors.length === 0) return 0;
+    
+    const availableFlavors = product.flavors.filter(f => !f.outOfStock && !product.outOfStock);
+    const listToUse = availableFlavors.length > 0 ? availableFlavors : product.flavors;
+
+    const minUsd = Math.min(...listToUse.map(f => (f.promoUsd && f.promoUsd < f.usd) ? f.promoUsd : f.usd));
+    return priceFor(minUsd);
+  }
+
+  // 2. Manejo de la búsqueda en tiempo real
+  function handleSearch() {
+    const query = searchInput.value.trim().toLowerCase();
+
+    if (clearBtn) {
+      clearBtn.style.display = query.length > 0 ? 'block' : 'none';
+    }
+
+    if (query.length < 2) {
+      if (dropdown) {
+        dropdown.classList.add('hidden');
+        dropdown.innerHTML = '';
+      }
+      if (typeof renderProducts === 'function') renderProducts('');
+      return;
+    }
+
+    // Filtrar desde el array real PRODUCTS
+    const filtered = PRODUCTS.filter(product => {
+      const matchBrand = product.brand.toLowerCase().includes(query);
+      const matchName = product.name.toLowerCase().includes(query);
+      const matchFlavor = product.flavors.some(f => f.name.toLowerCase().includes(query));
+
+      return matchBrand || matchName || matchFlavor;
+    });
+
+    renderDropdown(filtered);
+
+    // Filtrar también las tarjetas visibles en la grilla
+    if (typeof renderProducts === 'function') {
+      renderProducts(query);
+    }
+  }
+
+  // 3. Renderizar items en el menú desplegable
+  function renderDropdown(items) {
+    if (!dropdown) return;
+
+    if (items.length === 0) {
+      dropdown.innerHTML = `<div class="search-no-results">No se encontraron productos</div>`;
+    } else {
+      dropdown.innerHTML = items.slice(0, 6).map(item => {
+        const brandSlug = item.brand.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+        const sectionId = `${item.category}-${brandSlug}`;
+        const priceFormatted = fmtARS(getProductStartingPrice(item));
+        const fullTitle = `${item.brand} ${item.name}`;
+
+        return `
+          <a href="#${sectionId}" class="search-result-item" data-section="${sectionId}" data-name="${fullTitle.toLowerCase()}">
+            <img src="${item.image || 'assets/placeholder.jpg'}" alt="${fullTitle}" class="search-result-thumb" />
+            <div class="search-result-info">
+              <span class="search-result-title"><strong>${item.brand}</strong> ${item.name}</span>
+              <span class="search-result-price">${priceFormatted}</span>
+            </div>
+          </a>
+        `;
+      }).join('');
+
+      // Evento al hacer clic en un item de las sugerencias
+      dropdown.querySelectorAll('.search-result-item').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          const targetName = link.getAttribute('data-name');
+          const sectionId = link.getAttribute('data-section');
+
+          dropdown.classList.add('hidden');
+
+          // Buscar la tarjeta del producto exacto por su título (h3)
+          let targetCard = null;
+          const cards = document.querySelectorAll('.card');
+          
+          cards.forEach(card => {
+            const h3 = card.querySelector('h3');
+            if (h3) {
+              const cardTitle = h3.textContent.trim().toLowerCase();
+              if (cardTitle.includes(targetName) || targetName.includes(cardTitle)) {
+                targetCard = card;
+              }
+            }
+          });
+
+          // Si encuentra la tarjeta del modelo, desliza y lo CENTRA en la pantalla
+          if (targetCard) {
+            targetCard.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center'
+            });
+            
+            // Resaltar suavemente el producto seleccionado
+            targetCard.style.transition = 'outline 0.3s ease, transform 0.3s ease';
+            targetCard.style.transform = 'scale(1.03)';
+            setTimeout(() => {
+              targetCard.style.transform = 'scale(1)';
+            }, 600);
+          } else {
+            // Si no ubica la tarjeta exacta, desliza hasta el título de la marca/sección
+            const sectionEl = document.getElementById(sectionId);
+            if (sectionEl) {
+              sectionEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }
+        });
+      });
+    }
+    dropdown.classList.remove('hidden');
+  }
+
+// 4. Eventos de interacción
+  let searchTimeout;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      handleSearch();
+    }, 200); // Espera 200ms después de que la persona deja de escribir
+  });
+
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      searchInput.value = '';
+      handleSearch();
+      searchInput.focus();
+    });
+  }
+
+  document.addEventListener('click', (e) => {
+    if (dropdown && !searchInput.contains(e.target) && !dropdown.contains(e.target)) {
+      dropdown.classList.add('hidden');
+    }
+  });
+
+  searchInput.addEventListener('focus', () => {
+    if (searchInput.value.trim().length >= 2) {
+      handleSearch();
+    }
+  });
+});
