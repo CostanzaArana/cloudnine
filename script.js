@@ -5,20 +5,21 @@
 const backdrop = document.getElementById("backdrop");
 
 function toggleBodyScroll(disable) {
-  document.body.style.overflow = disable ? "hidden" : "";
+  // Dejamos la función sin bloquear para permitir el scroll siempre
+  document.body.style.overflow = "";
 }
 
 function openBackdrop() {
   if (backdrop) backdrop.classList.add("active");
-  toggleBodyScroll(true);
+  // Ya no llamamos a toggleBodyScroll(true)
 }
 
 function closeBackdrop() {
   if (backdrop) backdrop.classList.remove("active");
-  toggleBodyScroll(false);
+  // Ya no llamamos a toggleBodyScroll(false)
 }
 
-// Cierre global al tocar/cliquear fuera (en la zona oscura)
+// Cierre global al tocar/cliquear en el fondo oscuro
 if (backdrop) {
   backdrop.addEventListener("click", () => {
     closeMenu();
@@ -65,14 +66,15 @@ if (menuClose) {
 // CONFIGURACIÓN Y DÓLAR BLUE
 // ==========================
 
-const MARGIN = 1.65;
+const MARGIN = 1.55;
 const FALLBACK_RATE = 1300;
 const WHATSAPP_NUMBER = "5493547322726";
 
 const WORKER_MP_URL = "https://crear-preferencia-mp.cotiarana.workers.dev";
 
 let dolarBlueRate = null;
-let marcaSeleccionada = "all";
+let marcaSeleccionada = sessionStorage.getItem("cloudnine_selected_brand") || "all";
+let ordenPrecioSeleccionado = sessionStorage.getItem("cloudnine_price_sort") || null;
 
 // ==========================
 // TOAST NOTIFICATION
@@ -120,11 +122,43 @@ function priceFor(usd) {
 }
 
 // ==========================
+// ESTADO DE CARGA DE PRODUCTOS
+// ==========================
+
+// Función para mostrar el estado de carga con Skeleton Loaders
+function showSkeletonLoaders(count = 8) {
+  // Detectamos cuál es la grilla que está presente en la página actual
+  const container = 
+    document.getElementById("grid-destacados") || 
+    document.getElementById("grid-descartables") || 
+    document.getElementById("grid-recargables") || 
+    document.getElementById("grid-liquidos") || 
+    document.getElementById("grid-productos");
+  if (!container) return;
+
+  // Generamos N tarjetas de skeleton completas
+  const skeletonsHTML = Array.from({ length: count }, () => `
+    <div class="skeleton-card">
+      <div class="skeleton-img"></div>
+      <div class="skeleton-text title"></div>
+      <div class="skeleton-text"></div>
+      <div class="skeleton-text price"></div>
+      <div class="skeleton-button"></div>
+    </div>
+  `).join('');
+
+  container.innerHTML = skeletonsHTML;
+}
+
+// ==========================
 // Mapear los datos que vienen desde Google Sheets
 // ==========================
 
 async function fetchProductsFromSheet() {
-  // 1. Intentar cargar inmediatamente desde la memoria local (¡Carga instantánea!)
+  if (!localStorage.getItem("cloudnine_products")) {
+    showSkeletonLoaders(8);
+  }
+
   const cachedData = localStorage.getItem("cloudnine_products");
   if (cachedData) {
     PRODUCTS = JSON.parse(cachedData);
@@ -133,15 +167,13 @@ async function fetchProductsFromSheet() {
 
   try {
     const res = await fetch(GOOGLE_SHEET_URL);
+    if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
     const rawData = await res.json();
 
     const grouped = {};
 
     rawData.forEach((row) => {
-      // Clave única por producto
       const key = `${row.category}_${row.brand}_${row.name}`.toLowerCase();
-
-      // Evaluamos si esta fila específica está marcada como destacada
       const isRowFeatured =
         row.featured === true || String(row.featured).toUpperCase() === "TRUE";
 
@@ -159,19 +191,14 @@ async function fetchProductsFromSheet() {
           info: row.info ? String(row.info) : null,
           flavors: [],
         };
-      } else {
-        // SI EL PRODUCTO YA EXISTE: si esta nueva fila tiene featured = TRUE, actualizamos el producto
-        if (isRowFeatured) {
-          grouped[key].featured = true;
-        }
+      } else if (isRowFeatured) {
+        grouped[key].featured = true;
       }
 
-      // Agregar sabor a la lista de opciones
       if (row.flavor) {
         grouped[key].flavors.push({
           name: String(row.flavor).trim(),
           usd: Number(String(row.price_usd || 0).replace(",", ".")),
-          // NUEVO: Precio en promoción (si existe)
           promoUsd: row.promo_price_usd
             ? Number(String(row.promo_price_usd).replace(",", "."))
             : null,
@@ -182,8 +209,6 @@ async function fetchProductsFromSheet() {
       }
     });
 
-    // Convertimos el objeto agrupado a array y calculamos automáticamente
-    // si el producto general está agotado basándonos en los sabores
     PRODUCTS = Object.values(grouped).map((product) => {
       const isFullyOutOfStock =
         product.flavors.length > 0 &&
@@ -195,14 +220,40 @@ async function fetchProductsFromSheet() {
       };
     });
 
-    // 2. Guardar el nuevo resultado en la memoria local para futuras cargas
     localStorage.setItem("cloudnine_products", JSON.stringify(PRODUCTS));
 
-    // 3. Volver a renderizar solo para refrescar con datos super actualizados
     if (typeof renderProducts === "function") renderProducts();
   } catch (error) {
     console.error("Error al obtener los datos de Google Sheets:", error);
+    
+    // Si no tenemos productos cacheados para mostrar, desplegamos la pantalla de error
+    if (PRODUCTS.length === 0) {
+      showErrorState();
+    }
   }
+}
+
+// Función para mostrar el estado de error en la grilla activa
+function showErrorState() {
+  const container = 
+    document.getElementById("grid-destacados") || 
+    document.getElementById("grid-descartables") || 
+    document.getElementById("grid-recargables") || 
+    document.getElementById("grid-liquidos") || 
+    document.getElementById("grid-productos");
+    
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="error-load-container" style="grid-column: 1 / -1; text-align: center; padding: 3rem 1rem;">
+      <p style="font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-color, #333);">
+        No pudimos cargar el catálogo en este momento.
+      </p>
+      <button onclick="fetchProductsFromSheet()" class="card-cta" style="max-width: 200px; margin: 0 auto;">
+        Reintentar
+      </button>
+    </div>
+  `;
 }
 
 // ==========================
@@ -288,81 +339,87 @@ function createProductCard(product) {
   }
 
   function updateState() {
-    const flavor = currentFlavor();
-    if (!flavor) return;
+      const flavor = currentFlavor();
+      if (!flavor) return;
 
-    const isOut = flavor.outOfStock || product.outOfStock;
+      // ⚡ Micro-interacción: Animación rápida al cambiar valor
+      priceEl.classList.add("price-updated");
+      setTimeout(() => {
+        priceEl.classList.remove("price-updated");
+      }, 150);
 
-    if (isOut) {
-      card.classList.add("out-of-stock");
-      ctaEl.disabled = true;
-      ctaEl.textContent = "Sin Stock";
-      ctaEl.classList.add("disabled");
-      priceEl.textContent = ""; // Oculta el precio si está agotado
-    } else {
-      card.classList.remove("out-of-stock");
-      ctaEl.disabled = false;
-      ctaEl.textContent = "Agregar al carrito";
-      ctaEl.classList.remove("disabled");
+      const isOut = flavor.outOfStock || product.outOfStock;
+
+      if (isOut) {
+        card.classList.add("out-of-stock");
+        ctaEl.disabled = true;
+        ctaEl.textContent = "Sin Stock";
+        ctaEl.classList.add("disabled");
+        priceEl.textContent = ""; // Oculta el precio si está agotado
+      } else {
+        card.classList.remove("out-of-stock");
+        ctaEl.disabled = false;
+        ctaEl.textContent = "Agregar al carrito";
+        ctaEl.classList.remove("disabled");
+
+        const qty = Math.max(1, parseInt(qtyEl.value) || 1);
+        const activeUsd =
+          flavor.promoUsd && flavor.promoUsd < flavor.usd
+            ? flavor.promoUsd
+            : flavor.usd;
+
+        if (flavor.promoUsd && flavor.promoUsd < flavor.usd) {
+          const oldTotal = priceFor(flavor.usd) * qty;
+          const promoTotal = priceFor(flavor.promoUsd) * qty;
+
+          priceEl.innerHTML = `
+            <span class="old-price">${fmtARS(oldTotal)}</span>
+            <span class="promo-price">${fmtARS(promoTotal)}</span>
+          `;
+        } else {
+          const total = priceFor(activeUsd) * qty;
+          priceEl.textContent = fmtARS(total);
+        }
+      }
+    }
+
+    selectEl.addEventListener("change", updateState);
+    qtyEl.addEventListener("input", updateState);
+
+    ctaEl.addEventListener("click", () => {
+      const flavor = currentFlavor();
+      if (!flavor || flavor.outOfStock || product.outOfStock) return;
 
       const qty = Math.max(1, parseInt(qtyEl.value) || 1);
-      const activeUsd =
+
+      const finalUsd =
         flavor.promoUsd && flavor.promoUsd < flavor.usd
           ? flavor.promoUsd
           : flavor.usd;
 
-      if (flavor.promoUsd && flavor.promoUsd < flavor.usd) {
-        const oldTotal = priceFor(flavor.usd) * qty;
-        const promoTotal = priceFor(flavor.promoUsd) * qty;
+      addToCart({
+        brand: product.brand,
+        name: product.name,
+        flavor: flavor.name,
+        usd: finalUsd,
+        qty,
+      });
+      const originalText = ctaEl.textContent;
+      ctaEl.textContent = "¡Agregado! ✓";
+      ctaEl.classList.add("added");
+      ctaEl.disabled = true; // Previene doble clic accidental en el microsegundo
 
-        priceEl.innerHTML = `
-          <span class="old-price">${fmtARS(oldTotal)}</span>
-          <span class="promo-price">${fmtARS(promoTotal)}</span>
-        `;
-      } else {
-        const total = priceFor(activeUsd) * qty;
-        priceEl.textContent = fmtARS(total);
-      }
-    }
-  }
-
-  selectEl.addEventListener("change", updateState);
-  qtyEl.addEventListener("input", updateState);
-
-  ctaEl.addEventListener("click", () => {
-    const flavor = currentFlavor();
-    if (!flavor || flavor.outOfStock || product.outOfStock) return;
-
-    const qty = Math.max(1, parseInt(qtyEl.value) || 1);
-
-    const finalUsd =
-      flavor.promoUsd && flavor.promoUsd < flavor.usd
-        ? flavor.promoUsd
-        : flavor.usd;
-
-    addToCart({
-      brand: product.brand,
-      name: product.name,
-      flavor: flavor.name,
-      usd: finalUsd,
-      qty,
+      setTimeout(() => {
+        ctaEl.textContent = originalText;
+        ctaEl.classList.remove("added");
+        ctaEl.disabled = false;
+      }, 1200);
     });
-    const originalText = ctaEl.textContent;
-    ctaEl.textContent = "¡Agregado! ✓";
-    ctaEl.classList.add("added");
-    ctaEl.disabled = true; // Previene doble clic accidental en el microsegundo
 
-    setTimeout(() => {
-      ctaEl.textContent = originalText;
-      ctaEl.classList.remove("added");
-      ctaEl.disabled = false;
-    }, 1200);
-  });
+    updateState();
 
-  updateState();
-
-  return card;
-}
+    return card;
+  }
 
 // ==========================
 // RENDERIZAR PRODUCTOS
@@ -537,6 +594,8 @@ function renderProducts(searchTerm = "") {
   });
 
   handleInitialHashScroll();
+  initScrollReveal();
+  restaurarOrdenPrecio();
 }
 
 // ==========================
@@ -618,7 +677,15 @@ if (puffFiltersContainer) {
 }
 
 function ordenarProductos(orden, btnElement) {
-  // 1. Estilos visuales de los botones de precio
+  // 1. Guardar o remover la preferencia en la sesión
+  ordenPrecioSeleccionado = orden;
+  if (orden) {
+    sessionStorage.setItem("cloudnine_price_sort", orden);
+  } else {
+    sessionStorage.removeItem("cloudnine_price_sort");
+  }
+
+  // 2. Estilos visuales de los botones de precio
   document
     .querySelectorAll(".sort-btn")
     .forEach((btn) => btn.classList.remove("active"));
@@ -626,20 +693,18 @@ function ordenarProductos(orden, btnElement) {
     btnElement.classList.add("active");
   }
 
-  // 2. Buscamos todas las grillas individuales de cada marca (.grid)
+  // 3. Buscamos todas las grillas individuales de cada marca (.grid)
   const grids = document.querySelectorAll(".grid");
 
   grids.forEach((grid) => {
-    // Obtenemos solo las tarjetas (.card) de ESTA grilla
     const cards = Array.from(grid.children).filter((child) =>
       child.classList.contains("card"),
     );
 
     if (cards.length <= 1) return;
 
-    // 3. Ordenamos las tarjetas considerando disponibilidad y precio
+    // 4. Ordenamos las tarjetas considerando disponibilidad y precio
     cards.sort((a, b) => {
-      // Verificamos si la tarjeta o el botón están marcados como agotados / sin stock
       const sinStockA =
         a.classList.contains("out-of-stock") ||
         a.querySelector(".card-cta")?.disabled;
@@ -647,11 +712,9 @@ function ordenarProductos(orden, btnElement) {
         b.classList.contains("out-of-stock") ||
         b.querySelector(".card-cta")?.disabled;
 
-      // REGLA 1: Si uno no tiene stock y el otro sí, el sin stock va al final
       if (sinStockA && !sinStockB) return 1;
       if (!sinStockA && sinStockB) return -1;
 
-      // REGLA 2: Si ambos tienen el mismo estado de stock, ordenamos por precio
       const precioAEl = a.querySelector(".card-price");
       const precioBEl = b.querySelector(".card-price");
 
@@ -665,17 +728,28 @@ function ordenarProductos(orden, btnElement) {
       return orden === "asc" ? precioA - precioB : precioB - precioA;
     });
 
-    // 4. Reorganizamos las tarjetas en su grilla
     cards.forEach((card) => grid.appendChild(card));
   });
 }
 
+// Función auxiliar para re-aplicar el orden guardado automáticamente al renderizar
+function restaurarOrdenPrecio() {
+  if (!ordenPrecioSeleccionado) return;
+  const btnActive = document.querySelector(`.sort-btn[onclick*="'${ordenPrecioSeleccionado}'"]`);
+  ordenarProductos(ordenPrecioSeleccionado, btnActive);
+}
+
 function limpiarFiltros() {
-  // 1. Resetear variables de estado globales a "all"
+  // 1. Borrar storage de sesión
+  sessionStorage.removeItem("cloudnine_selected_brand");
+  sessionStorage.removeItem("cloudnine_price_sort");
+
+  // 2. Resetear variables globales
   marcaSeleccionada = "all";
   activePuffFilter = "all";
+  ordenPrecioSeleccionado = null;
 
-  // 2. Resetear selección visual de botones de marcas a "Todas"
+  // 3. Resetear selección visual de botones de marcas a "Todas"
   const brandButtons = document.querySelectorAll('#brandFilters .filter-btn');
   brandButtons.forEach(btn => {
     if (btn.dataset.brand === 'all') {
@@ -685,7 +759,7 @@ function limpiarFiltros() {
     }
   });
 
-  // 3. Resetear selección visual de botones de puffs a "Todos"
+  // 4. Resetear selección visual de botones de puffs a "Todos"
   const puffButtons = document.querySelectorAll('#puffFilters .filter-btn');
   puffButtons.forEach(btn => {
     if (btn.dataset.range === 'all') {
@@ -695,11 +769,11 @@ function limpiarFiltros() {
     }
   });
 
-  // 4. Desmarcar botones de ordenamiento por precio
+  // 5. Desmarcar botones de ordenamiento por precio
   const sortButtons = document.querySelectorAll('.sort-btn');
   sortButtons.forEach(btn => btn.classList.remove('active'));
 
-  // 5. Limpiar los campos de búsqueda (tanto el header como el buscador en vivo)
+  // 6. Limpiar campos de búsqueda
   const liveSearch = document.getElementById('live-search-input');
   if (liveSearch) liveSearch.value = '';
 
@@ -711,9 +785,10 @@ function limpiarFiltros() {
   const clearBtn = document.getElementById('clear-search-btn');
   if (clearBtn) clearBtn.style.display = 'none';
 
-  // 6. Volver a renderizar el catálogo completo invocando la función correcta
+  // 7. Volver a renderizar el catálogo completo
   renderProducts();
 }
+
 
 // ==========================================
 // VERIFICACIÓN DE MAYORÍA DE EDAD (+18)
@@ -1077,6 +1152,23 @@ if (townSelect) {
 
 restoreCheckoutData();
 
+
+// ==========================
+// REGISTRO DE PEDIDOS EN GOOGLE SHEETS
+// ==========================
+
+function registrarPedidoEnSheet(pedidoPayload) {
+  // Envío silencioso con mode 'no-cors' para no bloquear la redirección o UI
+  fetch(GOOGLE_SHEET_URL, {
+    method: "POST",
+    mode: "no-cors",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(pedidoPayload),
+  }).catch((err) => console.error("Error registrando pedido en Sheets:", err));
+}
+
 // ==========================
 // CHECKOUT: WHATSAPP Y MERCADO PAGO
 // ==========================
@@ -1121,6 +1213,11 @@ async function pagarConMercadoPago() {
     return;
   }
 
+  const subtotal = cart.reduce((sum, item) => sum + priceFor(item.usd) * item.qty, 0);
+  const shippingCost = method === "alrededores" ? 5000 : 0;
+  const total = subtotal + shippingCost;
+  const detalleStr = cart.map((i) => `${i.brand ? i.brand + " " : ""}${i.name} (${i.flavor}) x${i.qty}`).join(" | ");
+
   const itemsMP = cart.map((item) => ({
     title: `${item.brand ? item.brand + " " : ""}${item.name} (${item.flavor})`,
     quantity: item.qty,
@@ -1152,14 +1249,25 @@ async function pagarConMercadoPago() {
     const data = await respuesta.json();
 
     if (data.init_point) {
+      // 🟢 REGISTRO EN GOOGLE SHEETS
+      registrarPedidoEnSheet({
+        origen: "Mercado Pago (Iniciado)",
+        cliente: name,
+        metodo: method,
+        direccion: address,
+        localidad: town,
+        detalle: detalleStr,
+        total: total,
+      });
+
       window.location.href = data.init_point;
-    } else {
-      showToast("Error al conectar con Mercado Pago");
+      } else {
+        showToast("Error al conectar con Mercado Pago");
+      }
+      } catch (error) {
+        console.error("Error al procesar pago:", error);
+        showToast("No se pudo iniciar el pago");
     }
-  } catch (error) {
-    console.error("Error al procesar pago:", error);
-    showToast("No se pudo iniciar el pago");
-  }
 }
 
 // 2. Evento para el botón de Mercado Pago
@@ -1168,7 +1276,7 @@ if (btnMP) {
   btnMP.addEventListener("click", pagarConMercadoPago);
 }
 
-// 3. Evento para el botón de WhatsApp (Mantiene tu código original)
+// 3. Evento para el botón de WhatsApp
 if (cartCheckout) {
   cartCheckout.addEventListener("click", () => {
     const cart = getCart();
@@ -1245,6 +1353,18 @@ if (cartCheckout) {
     } else {
       msg += `\n💳 *Total:* ${fmtARS(total)}`;
     }
+
+    // 🟢 REGISTRO EN GOOGLE SHEETS
+    const detalleStr = cart.map((i) => `${i.brand ? i.brand + " " : ""}${i.name} (${i.flavor}) x${i.qty}`).join(" | ");
+    registrarPedidoEnSheet({
+      origen: "WhatsApp Web",
+      cliente: name,
+      metodo: method,
+      direccion: address,
+      localidad: town,
+      detalle: detalleStr,
+      total: total,
+    });
 
     const cleanPhone = String(WHATSAPP_NUMBER).replace(/[^0-9]/g, "");
     const whatsappUrl = `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(msg)}`;
@@ -1346,6 +1466,7 @@ function generarFiltrosMarcas(productos) {
 
 function filtrarPorMarca(marca, boton) {
   marcaSeleccionada = marca;
+  sessionStorage.setItem("cloudnine_selected_brand", marca);
 
   // Marcar botón activo
   const botones = document.querySelectorAll("#brandFilters .filter-btn");
@@ -1415,7 +1536,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const availableFlavors = product.flavors.filter(f => !f.outOfStock && !product.outOfStock);
     const listToUse = availableFlavors.length > 0 ? availableFlavors : product.flavors;
 
-    const minUsd = Math.min(...listToUse.map(f => (f.promoUsd && f.promoUsd < f.usd) ? f.promoUsd : f.usd));
+    if (availableFlavors.length === 0) return 0;
+
+    const minUsd = Math.min(...availableFlavors.map(f => (f.promoUsd && f.promoUsd < f.usd) ? f.promoUsd : f.usd));
     return priceFor(minUsd);
   }
 
@@ -1465,13 +1588,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const sectionId = `${item.category}-${brandSlug}`;
         const priceFormatted = fmtARS(getProductStartingPrice(item));
         const fullTitle = `${item.brand} ${item.name}`;
+        // 🟢 CALCULAMOS SI TIENE STOCK Y SU PRECIO
+        const startPrice = getProductStartingPrice(item);
+        const isOut = item.outOfStock || startPrice <= 0;
+
+        // 🟢 FORMATEAMOS LA ETIQUETA DEL PRECIO
+        const priceHTML = isOut
+          ? `<span class="out-of-stock-text">Sin stock</span>`
+          : fmtARS(startPrice);
 
         return `
-          <a href="#${sectionId}" class="search-result-item" data-section="${sectionId}" data-name="${fullTitle.toLowerCase()}">
+          <a href="#${sectionId}" class="search-result-item ${isOut ? 'is-out-of-stock' : ''}" data-section="${sectionId}" data-name="${fullTitle.toLowerCase()}">
             <img src="${item.image || 'assets/placeholder.jpg'}" alt="${fullTitle}" class="search-result-thumb" />
             <div class="search-result-info">
               <span class="search-result-title"><strong>${item.brand}</strong> ${item.name}</span>
-              <span class="search-result-price">${priceFormatted}</span>
+              <span class="search-result-price">${priceHTML}</span>
             </div>
           </a>
         `;
@@ -1555,3 +1686,43 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 });
+
+// ==========================================
+// SCROLL REVEAL (INTERSECTION OBSERVER)
+// ==========================================
+
+function initScrollReveal() {
+  // Comprobar soporte de IntersectionObserver
+  if (!('IntersectionObserver' in window)) {
+    return; // Si el navegador es antiguo, muestra las tarjetas normalmente
+  }
+
+  const observerOptions = {
+    root: null, // usa el viewport del navegador
+    rootMargin: '0px 0px -50px 0px', // se activa 50px antes de entrar completamente
+    threshold: 0.1
+  };
+
+  const revealObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        // Agrega la clase 'visible' cuando la tarjeta entra en pantalla
+        entry.target.classList.add('visible');
+        // Deja de observar la tarjeta una vez animada (mejora de rendimiento)
+        observer.unobserve(entry.target);
+      }
+    });
+  }, observerOptions);
+
+  // Selecciona todas las tarjetas de la tienda
+  const cards = document.querySelectorAll('.card');
+  cards.forEach((card, index) => {
+    // Aplica la clase base para ocultar y animar
+    card.classList.add('card-reveal');
+    
+    // Opcional: Pequeño escalonamiento (stagger) para las tarjetas visibles de entrada
+    card.style.transitionDelay = `${(index % 4) * 0.08}s`;
+    
+    revealObserver.observe(card);
+  });
+}

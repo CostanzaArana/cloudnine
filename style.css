@@ -259,8 +259,8 @@ MENÚ LATERAL OVERLAY
   position: fixed;
   top: 0;
   left: 0;
-  height: 100%;
-  width: 260px;
+  height: 100vh;
+  width: 300px;
   max-width: 80vw;
   background: rgba(12, 12, 12, 0.98);
   border-right: 1px solid var(--line);
@@ -270,14 +270,18 @@ MENÚ LATERAL OVERLAY
   justify-content: flex-start;
   gap: 1.6rem;
   padding: 4rem 2rem 2rem;
-  transform: translateX(-100%);
-  transition: transform 0.3s ease;
-  z-index: 1000;
+  z-index: 999;
   font-family: var(--font-titles);
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+  transform: translateX(-100%);
+  visibility: hidden;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .menu-overlay.open {
   transform: translateX(0);
+  visibility: visible;
 }
 
 .menu-close {
@@ -359,22 +363,26 @@ PANEL DE CARRITO
   position: fixed;
   top: 0;
   right: 0;
-  height: 100%;
-  width: 320px;
+  height: 100vh;
+  width: 380px;
   max-width: 85vw;
   background: rgba(12, 12, 12, 0.98);
   border-left: 1px solid var(--line);
   padding: 4rem 1.6rem 1.6rem;
   transform: translateX(100%);
-  transition: transform 0.3s ease;
+  visibility: hidden;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.45s cubic-bezier(0.16, 1, 0.3, 1);
   overflow-y: auto;
-  z-index: 1000;
+  z-index: 999;
+  box-shadow: -2px 0 12px rgba(0, 0, 0, 0.15);
   box-sizing: border-box;
   font-family: var(--font-body);
 }
 
 .cart-panel.open {
   transform: translateX(0);
+  visibility: visible;
 }
 
 .cart-item {
@@ -560,14 +568,21 @@ CATÁLOGO Y PRODUCTOS
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition:
-    transform 0.2s ease,
-    border-color 0.2s ease;
+  transition: transform 0.25s cubic-bezier(0.2, 0, 0, 1), 
+              box-shadow 0.25s cubic-bezier(0.2, 0, 0, 1),
+              border-color 0.25s ease;
+  will-change: transform, box-shadow;
+  animation: fadeIn 0.35s ease-in-out;
 }
 
 .card:hover {
   border-color: rgba(242, 241, 236, 0.3);
-  transform: translateY(-3px);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.15);
+}
+
+.card:hover .card-img img {
+  transform: scale(1.06);
 }
 
 .card-img {
@@ -577,11 +592,11 @@ CATÁLOGO Y PRODUCTOS
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #000;
+  background-color: #121212;
   overflow: hidden;
   padding: 12px;
   box-sizing: border-box;
-  border-radius: 8px;
+  border-radius: 8px 8px 0 0;
 }
 
 .card-img img {
@@ -589,8 +604,9 @@ CATÁLOGO Y PRODUCTOS
   max-height: 100%;
   width: auto;
   height: auto;
-  object-fit: contain;
+  object-fit: cover;
   display: block;
+  transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1);
 }
 
 .card-body {
@@ -622,6 +638,13 @@ CATÁLOGO Y PRODUCTOS
   font-weight: 800;
   font-size: 1.15rem;
   color: #00d2ff;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  min-height: 28px; /* Mantiene la altura estable para evitar saltos de layout */
+}
+
+.card-price.price-updated {
+  opacity: 0.3;
+  transform: scale(0.96);
 }
 
 .old-price {
@@ -672,6 +695,7 @@ CATÁLOGO Y PRODUCTOS
   font-family: var(--font-body);
   box-sizing: border-box;
   border-radius: 6px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .card-cta {
@@ -687,9 +711,7 @@ CATÁLOGO Y PRODUCTOS
   cursor: pointer;
   text-decoration: none;
   border-radius: 6px;
-  transition:
-    opacity 0.2s ease,
-    background-color 0.2s ease;
+  transition: transform 0.1s ease, background-color 0.2s ease, box-shadow 0.2s ease;
   width: 100%;
   box-sizing: border-box;
   text-align: center;
@@ -705,9 +727,31 @@ CATÁLOGO Y PRODUCTOS
   font-family: var(--font-titles);
 }
 
+.card-cta:active {
+  transform: scale(0.95);
+}
+
+.card-cta.added {
+  animation: pulseSuccess 0.4s ease-out;
+}
+
 /* ==========================
 ESTADOS DE STOCK
 ========================== */
+
+/* Texto "Sin stock" en la lista del buscador */
+.out-of-stock-text {
+  color: #ff5555;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Opcional: Atenuar levemente el producto agotado en las sugerencias */
+.search-result-item.is-out-of-stock {
+  opacity: 0.65;
+}
 
 .card-cta:disabled,
 .card-cta.disabled {
@@ -718,12 +762,26 @@ ESTADOS DE STOCK
   opacity: 0.7;
 }
 
+.card.out-of-stock {
+  opacity: 0.75;
+  transition: opacity 0.3s ease;
+}
+
 .card.out-of-stock .card-img {
   opacity: 0.5;
+  filter: grayscale(80%); /* Da un tono gris a la imagen del producto agotado */
+  transition: filter 0.3s ease;
 }
 
 .card-select option[data-out="true"] {
   color: #888;
+}
+
+.card-select:focus, 
+.card-qty:focus {
+  border-color: var(--primary-color, #7c3aed); /* Ajusta al color principal de tu marca */
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15);
+  outline: none;
 }
 
 /* ==========================
@@ -878,18 +936,21 @@ BACKDROP (TELÓN OSCURO)
   left: 0;
   width: 100vw;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.65);
+  background-color: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  z-index: 900;
+  z-index: 998;
   opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s ease;
+  visibility: hidden;
+  transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              visibility 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  touch-action: pan-y;
 }
 
-.backdrop.active {
+#backdrop.open,
+#backdrop.active {
   opacity: 1;
-  pointer-events: auto;
+  visibility: visible;
 }
 
 /* ==========================================
@@ -1328,6 +1389,105 @@ LOADING STATE
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes pulseSuccess {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes popBadge {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.35);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* =========================================================
+   SKELETON LOADERS (ESTADO DE CARGA ANIMADO)
+   ========================================================= */
+
+/* Estructura base del loader de tarjeta */
+.skeleton-card {
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+}
+
+/* Elementos internos del skeleton */
+.skeleton-img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background-color: #222226;
+  border-radius: 8px 8px 0 0;
+}
+
+.skeleton-text {
+  height: 14px;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.skeleton-text.title {
+  height: 18px;
+  width: 75%;
+}
+
+.skeleton-text.price {
+  height: 22px;
+  width: 40%;
+}
+
+.skeleton-button {
+  height: 38px;
+  border-radius: 6px;
+  width: 100%;
+  margin-top: auto;
+}
+
+/* Animación de pulso/resplandor (Shimmer Effect) */
+.skeleton-img,
+.skeleton-text,
+.skeleton-button {
+  background: linear-gradient(
+    90deg,
+    #eef2f6 25%,
+    #f8fafc 50%,
+    #eef2f6 75%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite linear;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
   }
 }
 
@@ -1897,6 +2057,8 @@ HERO & COMPONENTES DE SUBPÁGINAS (CATÁLOGOS)
 .search-result-thumb {
   width: 42px;
   height: 42px;
+  aspect-ratio: 1 / 1;
+  flex-shrink: 0;
   object-fit: cover;
   border-radius: 6px;
   background-color: #000000;
@@ -1935,7 +2097,7 @@ HERO & COMPONENTES DE SUBPÁGINAS (CATÁLOGOS)
 }
 
 .cart-icon-pulse {
-  animation: cartPulse 0.4s ease-in-out;
+  animation: popBadge 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 /* Estado del botón al agregar con éxito */
@@ -1944,4 +2106,40 @@ HERO & COMPONENTES DE SUBPÁGINAS (CATÁLOGOS)
   color: #ffffff !important;
   border-color: #22c55e !important;
   transform: scale(0.98);
+}
+
+/* ==========================================
+   ANIMACIÓN DE ENTRADA AL HACER SCROLL
+   ========================================== */
+
+/* Estado inicial oculto cuando se activa el Scroll Reveal */
+.card.card-reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  will-change: opacity, transform;
+  transition: opacity 0.45s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              box-shadow 0.25s ease,
+              border-color 0.25s ease;
+}
+
+/* Estado cuando la tarjeta entra en la pantalla */
+.card.card-reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Estado inicial (oculto) */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), 
+              transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+/* Estado visible */
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
 }
