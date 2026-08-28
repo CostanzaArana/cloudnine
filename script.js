@@ -155,9 +155,12 @@ async function fetchProductsFromSheet() {
   if (cachedData) {
     PRODUCTS = JSON.parse(cachedData);
     if (typeof renderProducts === "function") renderProducts();
+<<<<<<< HEAD
     
     // ---> PUNTO 1: Valida el carrito con los productos guardados en caché
     validateAndCleanCart();
+=======
+>>>>>>> 2332200e887e83c2a2a2dc1e362a3bf486e4ae09
   }
 
   try {
@@ -218,10 +221,13 @@ async function fetchProductsFromSheet() {
     localStorage.setItem("cloudnine_products", JSON.stringify(PRODUCTS));
 
     if (typeof renderProducts === "function") renderProducts();
+<<<<<<< HEAD
 
     // ---> PUNTO 2: Valida el carrito apenas se descargan los productos actualizados de Sheets
     validateAndCleanCart();
 
+=======
+>>>>>>> 2332200e887e83c2a2a2dc1e362a3bf486e4ae09
   } catch (error) {
     console.error("Error al obtener los datos de Google Sheets:", error);
     if (PRODUCTS.length === 0) {
@@ -229,6 +235,10 @@ async function fetchProductsFromSheet() {
     }
   }
 }
+<<<<<<< HEAD
+=======
+
+>>>>>>> 2332200e887e83c2a2a2dc1e362a3bf486e4ae09
 function showErrorState() {
   const container = 
     document.getElementById("grid-destacados") || 
@@ -1149,9 +1159,30 @@ function removeFromCart(index) {
   saveCart(cart);
 }
 
+<<<<<<< HEAD
 // =========================================================
 // RE-VALIDACIÓN DE STOCK Y PRECIOS DEL CARRITO
 // =========================================================
+=======
+// ==========================
+// CONTADOR DEL CARRITO
+// ==========================
+
+function renderCartBadge() {
+  const cart = getCart();
+  const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
+  const cartCount = document.getElementById("cartCount");
+
+  if (cartCount) {
+    cartCount.textContent = totalQty;
+  }
+}
+renderCartBadge();
+
+// ==========================
+// PANEL DEL CARRITO Y ENVÍOS
+// ==========================
+>>>>>>> 2332200e887e83c2a2a2dc1e362a3bf486e4ae09
 
 function validateAndCleanCart() {
   if (typeof PRODUCTS === "undefined" || !PRODUCTS.length) return;
