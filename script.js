@@ -1,19 +1,4 @@
 // ==========================
-// LIMPIEZA DE PARÁMETROS MP (Evita ERR_TOO_MANY_REDIRECTS)
-// ==========================
-(function () {
-  try {
-    const search = window.location.search;
-    if (search && (search.includes("preference_id") || search.includes("collection_id"))) {
-      const cleanUrl = window.location.origin + window.location.pathname;
-      window.history.replaceState({}, document.title, cleanUrl);
-    }
-  } catch (e) {
-    console.error("Error al limpiar parámetros de la URL:", e);
-  }
-})();
-
-// ==========================
 // BACKDROP Y CONTROL DE SCROLL GLOBAL
 // ==========================
 
