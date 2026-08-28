@@ -155,12 +155,7 @@ async function fetchProductsFromSheet() {
   if (cachedData) {
     PRODUCTS = JSON.parse(cachedData);
     if (typeof renderProducts === "function") renderProducts();
-<<<<<<< HEAD
-    
-    // ---> PUNTO 1: Valida el carrito con los productos guardados en caché
-    validateAndCleanCart();
-=======
->>>>>>> 2332200e887e83c2a2a2dc1e362a3bf486e4ae09
+    if (typeof validateAndCleanCart === "function") validateAndCleanCart();
   }
 
   try {
@@ -221,13 +216,8 @@ async function fetchProductsFromSheet() {
     localStorage.setItem("cloudnine_products", JSON.stringify(PRODUCTS));
 
     if (typeof renderProducts === "function") renderProducts();
-<<<<<<< HEAD
+    if (typeof validateAndCleanCart === "function") validateAndCleanCart();
 
-    // ---> PUNTO 2: Valida el carrito apenas se descargan los productos actualizados de Sheets
-    validateAndCleanCart();
-
-=======
->>>>>>> 2332200e887e83c2a2a2dc1e362a3bf486e4ae09
   } catch (error) {
     console.error("Error al obtener los datos de Google Sheets:", error);
     if (PRODUCTS.length === 0) {
@@ -235,10 +225,7 @@ async function fetchProductsFromSheet() {
     }
   }
 }
-<<<<<<< HEAD
-=======
 
->>>>>>> 2332200e887e83c2a2a2dc1e362a3bf486e4ae09
 function showErrorState() {
   const container = 
     document.getElementById("grid-destacados") || 
@@ -288,12 +275,10 @@ function generarFiltrosMarcas(products) {
 
   const pageCat = getPageCategory();
   
-  // Filtrar marcas según la categoría de la página actual
   const categoryProducts = pageCat 
     ? products.filter(p => p.category === pageCat)
     : products;
 
-  // Extraer marcas únicas
   const brandsSet = new Set();
   categoryProducts.forEach(p => {
     if (p.brand) brandsSet.add(p.brand.trim());
@@ -301,7 +286,6 @@ function generarFiltrosMarcas(products) {
 
   const uniqueBrands = Array.from(brandsSet).sort((a, b) => a.localeCompare(b));
 
-  // Renderizar los botones de las marcas
   let buttonsHTML = `<button class="filter-btn ${marcaSeleccionada === 'all' ? 'active' : ''}" data-brand="all">Todas</button>`;
   
   uniqueBrands.forEach(brand => {
@@ -311,7 +295,6 @@ function generarFiltrosMarcas(products) {
 
   brandFiltersContainer.innerHTML = buttonsHTML;
 
-  // Event listenerdelegado o individual
   brandFiltersContainer.querySelectorAll(".filter-btn").forEach(btn => {
     btn.addEventListener("click", () => {
       brandFiltersContainer.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
@@ -529,7 +512,7 @@ function renderProducts(searchTerm = "") {
     fullGrouped[product.category][product.brand].push(product);
   });
 
-  buildNavigationMenu(fullGrouped);
+  if (typeof buildNavigationMenu === "function") buildNavigationMenu(fullGrouped);
   generarFiltrosMarcas(PRODUCTS);
 
   if (home && query === "") {
@@ -762,7 +745,6 @@ function initLiveSearch() {
     });
   }
 
-  // Cerrar el dropdown al hacer clic fuera
   document.addEventListener("click", (e) => {
     if (
       searchDropdown &&
@@ -780,7 +762,6 @@ function showSearchSuggestions(query) {
   const q = query.toLowerCase();
   const pageCat = getPageCategory();
 
-  // Filtrar productos por la página actual si estamos en una categoría concreta
   const availableProducts = pageCat
     ? PRODUCTS.filter((p) => p.category === pageCat)
     : PRODUCTS;
@@ -832,7 +813,6 @@ function showSearchSuggestions(query) {
   searchDropdown.innerHTML = html;
   searchDropdown.classList.remove("hidden");
 
-  // Event listener al seleccionar una sugerencia
   searchDropdown.querySelectorAll(".search-suggestion-item").forEach((item) => {
     item.addEventListener("click", () => {
       const brand = item.dataset.brand;
@@ -1159,30 +1139,9 @@ function removeFromCart(index) {
   saveCart(cart);
 }
 
-<<<<<<< HEAD
 // =========================================================
 // RE-VALIDACIÓN DE STOCK Y PRECIOS DEL CARRITO
 // =========================================================
-=======
-// ==========================
-// CONTADOR DEL CARRITO
-// ==========================
-
-function renderCartBadge() {
-  const cart = getCart();
-  const totalQty = cart.reduce((sum, item) => sum + item.qty, 0);
-  const cartCount = document.getElementById("cartCount");
-
-  if (cartCount) {
-    cartCount.textContent = totalQty;
-  }
-}
-renderCartBadge();
-
-// ==========================
-// PANEL DEL CARRITO Y ENVÍOS
-// ==========================
->>>>>>> 2332200e887e83c2a2a2dc1e362a3bf486e4ae09
 
 function validateAndCleanCart() {
   if (typeof PRODUCTS === "undefined" || !PRODUCTS.length) return;
@@ -1245,7 +1204,6 @@ function renderCartBadge() {
     cartCount.textContent = totalQty;
   }
 }
-renderCartBadge();
 
 // ==========================
 // PANEL DEL CARRITO Y ENVÍOS
@@ -1362,6 +1320,7 @@ if (cartToggle) {
 if (cartClose) {
   cartClose.addEventListener("click", closeCart);
 }
+
 
 // ==========================
 // PERSISTENCIA Y CHECKOUT POR WHATSAPP / MERCADO PAGO
@@ -1586,6 +1545,7 @@ if (cartCheckout) {
   });
 }
 
+
 // CHECKOUT VIA MERCADO PAGO
 if (btnMercadoPago) {
   btnMercadoPago.addEventListener("click", async () => {
@@ -1616,6 +1576,19 @@ if (btnMercadoPago) {
         });
       }
 
+      // 1. Guardar en Google Sheets antes de redirigir
+      registrarPedidoEnSheet({
+        fecha: new Date().toISOString(),
+        cliente: data.clientName,
+        metodo: data.method,
+        direccion: data.address,
+        localidad: data.finalTown,
+        total: data.total,
+        productos: data.itemsText,
+        pago: "Mercado Pago (Pendiente)",
+      });
+
+      // 2. Conectar con Cloudflare Worker
       const res = await fetch(WORKER_MP_URL, {
         method: "POST",
         headers: {
@@ -1634,17 +1607,6 @@ if (btnMercadoPago) {
       const responseData = await res.json();
 
       if (responseData.init_point) {
-        registrarPedidoEnSheet({
-          fecha: new Date().toISOString(),
-          cliente: data.clientName,
-          metodo: data.method,
-          direccion: data.address,
-          localidad: data.finalTown,
-          total: data.total,
-          productos: data.itemsText,
-          pago: "Mercado Pago (Pendiente)",
-        });
-
         window.location.href = responseData.init_point;
       } else {
         throw new Error("No se pudo obtener el link de pago.");
@@ -1657,12 +1619,6 @@ if (btnMercadoPago) {
     }
   });
 }
-
-// ==========================
-// INICIALIZACIÓN
-// ==========================
-
-fetchProductsFromSheet();
 
 // ==========================
 // DÓLAR BLUE API
@@ -1684,7 +1640,13 @@ async function fetchDolarBlue() {
   }
 }
 
-// Inicialización final de eventos al cargar el DOM
+// ==========================
+// INICIALIZACIÓN UNIFICADA AL CARGAR DOM
+// ==========================
+
 document.addEventListener("DOMContentLoaded", () => {
+  renderCartBadge();
+  fetchProductsFromSheet();
   fetchDolarBlue();
 });
+
